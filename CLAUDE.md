@@ -56,6 +56,9 @@ User (1) → (n) BankAccount → (n) Transaction [automatic]
 User (1) → (n) Transaction [manual, accountId: null]
 User (1) → (n) Budget → (1) Category
 User (1) → (n) BudgetTemplate → (1) Category
+User (1) → (n) Family [as admin/member/viewer]
+Family (1) → (n) FamilyMember → (1) User
+Family (1) → (n) FamilyInvitation [pending invitations]
 BudgetTemplate (1) → (n) Budget [generated budgets]
 Transaction (n) → (1) Category [optional]
 ```
@@ -83,24 +86,37 @@ Transaction (n) → (1) Category [optional]
 - `/api/belvo/link`: Create bank link and import transactions
 - `/api/belvo/callback`: Handle Belvo webhook responses
 
+#### Family Management Endpoints
+- `/api/families`: Family CRUD operations (create, list, update)
+- `/api/families/[familyId]/invite`: Send family invitations via email
+- `/api/families/[familyId]/members`: Family member management
+- `/api/families/[familyId]/members/[memberId]`: Individual member operations
+- `/api/families/invitations/[token]`: Retrieve invitation details by token
+- `/api/families/invitations/accept`: Accept family invitation
+- `/api/migration/family-setup`: Migrate existing users to family system
+
 #### Automation Endpoints
 - `/api/cron/generate-monthly-budgets`: Vercel cron job for automatic budget generation (1st of each month)
 
 ### UI/UX Architecture
 
 #### Route Grouping
-- `(auth)`: Unauthenticated pages (signin, signup)
+- `(auth)`: Unauthenticated pages (signin, signup, invite/[token])
 - `(dashboard)`: Protected application pages with shared layout
 
 #### Component Organization
 - `components/ui/`: shadcn/ui primitive components
-- `components/layout/`: Application-specific layout components
+- `components/layout/`: Application-specific layout components (MainNav, UserNav)
+- `components/`: Feature-specific components (FamilyMemberList, FamilySelector, AddTransactionModal)
+- `contexts/`: React context providers (FamilyContext for family state management)
 - Page components handle their own state and API calls
 
 #### State Management Pattern
 - Local state with React hooks for component-specific data
 - Server state via direct API calls (no global state library)
+- **Family Context**: Global family state management via React Context
 - Form handling with controlled components and validation
+- Session management via NextAuth.js for user authentication
 
 ## Environment Configuration
 
@@ -125,6 +141,13 @@ BELVO_WEBHOOK_URL="..."
 
 # Cron Jobs Security
 CRON_SECRET="..."
+
+# Email Configuration (Mailtrap)
+EMAIL_SERVER_HOST="smtp.mailtrap.io"
+EMAIL_SERVER_PORT="2525"
+EMAIL_SERVER_USER="..."
+EMAIL_SERVER_PASSWORD="..."
+EMAIL_FROM="noreply@finanzasapp.com"
 ```
 
 ## Database Schema Key Points
@@ -140,6 +163,21 @@ The `TransactionSource` enum distinguishes between:
 - Pre-defined categories with icons and colors
 - Custom categories via `customCategory` field on transactions
 - Hierarchical category support (parent/child relationships)
+
+### Family System
+The application implements a comprehensive family financial management system:
+
+#### Family Structure
+- **Multi-user families**: One family can have multiple members with different roles
+- **Role-based access**: ADMIN (full access), MEMBER (add transactions, view data), VIEWER (read-only)
+- **Family context**: All financial data is scoped to the active family
+- **Family switching**: Users can belong to multiple families and switch between them
+
+#### Invitation System
+- **Email-based invitations**: Invitations sent via SMTP (Mailtrap configuration)
+- **Token-based security**: Secure invitation tokens with expiration (7 days)
+- **Complete user flow**: Supports both existing users and new user registration
+- **Auto-acceptance**: New users automatically join family after registration
 
 ### Budget System
 The application implements a comprehensive budget management system with recurring capabilities:
@@ -223,6 +261,9 @@ The application implements a comprehensive budget management system with recurri
 - ✅ Bulk budget generation capabilities
 - ✅ Currency formatting (Colombian Peso - COP)
 - ✅ Input masking for monetary values (thousands separators, no decimals)
+- ✅ Family management system with role-based access control
+- ✅ Email invitation system with complete user onboarding flow
+- ✅ Family context switching and multi-family support
 
 ### Budget Page Features
 - **Tabbed interface**: Separate views for Active Budgets and Templates
@@ -230,3 +271,17 @@ The application implements a comprehensive budget management system with recurri
 - **Template management**: Create, view, and generate budgets from templates
 - **Visual indicators**: Progress bars, status badges, and formatted currency display
 - **Bulk operations**: Generate all missing budgets with single click
+
+### Family Page Features
+- **Family member management**: View all family members with roles and status
+- **Invitation system**: Send email invitations with role selection
+- **Role management**: Admin users can change member roles and remove members
+- **Family context switching**: Users can switch between families they belong to
+- **Responsive invitation flow**: Handles both new user registration and existing user login
+
+### Email System Features
+- **SMTP Integration**: Configured with Mailtrap for development/testing
+- **HTML email templates**: Professional design with responsive layout
+- **Invitation emails**: Automatic sending when family invitations are created
+- **Expiration handling**: Clear communication of invitation expiry dates
+- **Multi-language support**: Email content in Spanish (Colombian localization)

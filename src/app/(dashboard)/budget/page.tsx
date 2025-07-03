@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dialog'
 import { Plus, Target, AlertTriangle, CheckCircle, TrendingUp, LayoutTemplate, Play, Settings, Bell, Zap } from 'lucide-react'
 import { toast } from 'sonner'
+import { useFamily } from '@/contexts/FamilyContext'
 
 interface Budget {
   id: string
@@ -82,6 +83,7 @@ interface MissingBudgetsResponse {
 }
 
 export default function BudgetPage() {
+  const { currentFamily } = useFamily()
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [templates, setTemplates] = useState<BudgetTemplate[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -334,7 +336,7 @@ export default function BudgetPage() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Budget Management</h2>
           <p className="text-muted-foreground">
-            Set and track your spending limits by category
+            {currentFamily ? `Set and track spending limits for ${currentFamily.name}` : 'Set and track your spending limits by category'}
           </p>
         </div>
         <div className="flex space-x-2">

@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { MainNav } from '@/components/layout/main-nav'
 import { UserNav } from '@/components/layout/user-nav'
+import { FamilyProvider } from '@/contexts/FamilyContext'
+import { FamilySelector } from '@/components/FamilySelector'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -34,21 +36,24 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="flex h-16 items-center px-4">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-xl font-bold">Finanzas App</h1>
-            <MainNav className="mx-6" />
+    <FamilyProvider>
+      <div className="min-h-screen bg-background">
+        <header className="border-b">
+          <div className="flex h-16 items-center px-4">
+            <div className="flex items-center space-x-4">
+              <h1 className="text-xl font-bold">Finanzas App</h1>
+              <MainNav className="mx-6" />
+            </div>
+            <div className="ml-auto flex items-center space-x-4">
+              <FamilySelector />
+              <UserNav />
+            </div>
           </div>
-          <div className="ml-auto flex items-center space-x-4">
-            <UserNav />
-          </div>
-        </div>
-      </header>
-      <main className="flex-1 space-y-4 p-8 pt-6">
-        {children}
-      </main>
-    </div>
+        </header>
+        <main className="flex-1 space-y-4 p-8 pt-6">
+          {children}
+        </main>
+      </div>
+    </FamilyProvider>
   )
 }
