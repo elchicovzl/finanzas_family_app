@@ -47,7 +47,10 @@ export async function GET(request: NextRequest) {
       budgets.map(async (budget) => {
         const spent = await prisma.transaction.aggregate({
           where: {
-            account: { userId: session.user.id },
+            OR: [
+              { userId: session.user.id }, // Manual transactions (cash)
+              { account: { userId: session.user.id } } // Bank account transactions
+            ],
             categoryId: budget.categoryId,
             type: 'EXPENSE',
             date: {
@@ -58,7 +61,7 @@ export async function GET(request: NextRequest) {
           _sum: { amount: true }
         })
 
-        const spentAmount = Number(spent._sum.amount || 0)
+        const spentAmount = Math.abs(Number(spent._sum.amount || 0))
         const limitAmount = Number(budget.monthlyLimit)
         const percentage = limitAmount > 0 ? (spentAmount / limitAmount) * 100 : 0
 

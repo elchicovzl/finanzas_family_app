@@ -51,7 +51,10 @@ export async function GET(request: NextRequest) {
 
       prisma.transaction.aggregate({
         where: {
-          account: { userId: session.user.id },
+          OR: [
+            { userId: session.user.id }, // Manual transactions
+            { account: { userId: session.user.id } } // Bank account transactions
+          ],
           type: 'INCOME',
           date: {
             gte: startDate,
@@ -63,7 +66,10 @@ export async function GET(request: NextRequest) {
 
       prisma.transaction.aggregate({
         where: {
-          account: { userId: session.user.id },
+          OR: [
+            { userId: session.user.id }, // Manual transactions
+            { account: { userId: session.user.id } } // Bank account transactions
+          ],
           type: 'EXPENSE',
           date: {
             gte: startDate,
@@ -76,7 +82,10 @@ export async function GET(request: NextRequest) {
       prisma.transaction.groupBy({
         by: ['categoryId'],
         where: {
-          account: { userId: session.user.id },
+          OR: [
+            { userId: session.user.id }, // Manual transactions
+            { account: { userId: session.user.id } } // Bank account transactions
+          ],
           type: 'EXPENSE',
           date: {
             gte: startDate,
@@ -93,8 +102,8 @@ export async function GET(request: NextRequest) {
           type,
           SUM(amount) as total
         FROM transactions t
-        JOIN bank_accounts ba ON t.account_id = ba.id
-        WHERE ba.user_id = ${session.user.id}
+        LEFT JOIN bank_accounts ba ON t.account_id = ba.id
+        WHERE (t.user_id = ${session.user.id} OR ba.user_id = ${session.user.id})
         AND date >= ${new Date(now.getFullYear() - 1, now.getMonth(), 1)}
         GROUP BY DATE_TRUNC('month', date), type
         ORDER BY month DESC
