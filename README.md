@@ -1,23 +1,28 @@
 # Finanzas App - Personal Finance Manager
 
-A comprehensive personal finance web application that integrates with Colombian banks through Belvo API to provide automated transaction tracking, budget management, and financial analytics.
+A comprehensive family finance web application that integrates with Colombian banks through Belvo API to provide automated transaction tracking, budget management, family financial coordination, and detailed analytics.
 
 ## 🚀 Features
 
 ### Core Functionality
 - **🏦 Bank Integration**: Connect securely with Bancolombia and other Colombian banks via Belvo API
+- **👨‍👩‍👧‍👦 Family Management**: Multi-user families with role-based access control (Admin/Member/Viewer)
+- **📧 Email Invitations**: Secure invitation system with complete user onboarding flow
 - **📊 Dashboard**: Real-time financial overview with balance, income, and expense tracking
-- **💳 Transaction Management**: Automatic transaction import with categorization and search
+- **💳 Transaction Management**: Automatic and manual transaction tracking with categorization
 - **📈 Analytics & Reporting**: Interactive charts showing spending patterns and trends
-- **🎯 Budget Management**: Set spending limits by category with alerts and tracking
+- **🎯 Budget Management**: Recurring budget templates with automatic generation and alerts
+- **🔄 Family Context**: Switch between multiple families with isolated financial data
 - **🔒 Security**: Bank-level security with encrypted data storage
 
 ### Technical Features
 - **⚡ Modern Stack**: Next.js 14, TypeScript, Tailwind CSS, Prisma ORM
 - **🎨 UI Components**: shadcn/ui for consistent, accessible design
-- **🔐 Authentication**: NextAuth.js with secure session management
-- **📱 Responsive Design**: Mobile-first design with dark/light mode support
+- **🔐 Authentication**: NextAuth.js with Google OAuth and credentials support
+- **📧 Email System**: SMTP integration with professional HTML templates
+- **📱 Responsive Design**: Mobile-first design with comprehensive component library
 - **🔄 Real-time Sync**: Webhook-based transaction synchronization
+- **🌐 Multi-family Support**: Context switching with isolated data per family
 
 ## 🛠️ Tech Stack
 
@@ -26,8 +31,9 @@ A comprehensive personal finance web application that integrates with Colombian 
 - **Backend**: Next.js API Routes, NextAuth.js for authentication
 - **Database**: PostgreSQL with Prisma ORM
 - **External API**: Belvo API for bank integration
+- **Email**: Nodemailer with SMTP support (Mailtrap for development)
 - **Charts**: Recharts for data visualization
-- **Deployment**: Vercel-ready configuration
+- **Deployment**: Vercel-ready configuration with cron jobs
 
 ## 📋 Prerequisites
 
@@ -36,6 +42,8 @@ Before running this application, make sure you have:
 - Node.js 18+ installed
 - PostgreSQL database
 - Belvo API credentials (for bank integration)
+- SMTP server credentials (Mailtrap recommended for development)
+- Google OAuth credentials (optional)
 
 ## 🚀 Getting Started
 
@@ -65,11 +73,25 @@ DATABASE_URL="postgresql://username:password@localhost:5432/finanzas_app"
 NEXTAUTH_SECRET="your-secure-random-string"
 NEXTAUTH_URL="http://localhost:3000"
 
+# Google OAuth (optional)
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+
 # Belvo API
 BELVO_SECRET_ID="your-belvo-secret-id"
 BELVO_SECRET_PASSWORD="your-belvo-secret-password"
 BELVO_ENVIRONMENT="sandbox"
 BELVO_WEBHOOK_URL="http://localhost:3000/api/belvo/webhook"
+
+# Email Configuration (Mailtrap)
+EMAIL_SERVER_HOST="smtp.mailtrap.io"
+EMAIL_SERVER_PORT="2525"
+EMAIL_SERVER_USER="your-mailtrap-user"
+EMAIL_SERVER_PASSWORD="your-mailtrap-password"
+EMAIL_FROM="noreply@finanzasapp.com"
+
+# Cron Jobs Security
+CRON_SECRET="your-secure-cron-secret"
 ```
 
 ### 3. Database Setup
@@ -102,17 +124,24 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 finanzas_app/
 ├── src/
 │   ├── app/                    # Next.js app directory
-│   │   ├── (auth)/            # Authentication pages
+│   │   ├── (auth)/            # Authentication pages (signin, signup, invite)
 │   │   ├── (dashboard)/       # Protected dashboard pages
 │   │   ├── api/               # API routes
 │   │   └── globals.css        # Global styles
 │   ├── components/            # React components
 │   │   ├── ui/                # shadcn/ui components
-│   │   ├── layout/            # Layout components
-│   │   └── providers/         # Context providers
+│   │   ├── layout/            # Layout components (MainNav, UserNav)
+│   │   ├── providers/         # Context providers
+│   │   ├── FamilyMemberList.tsx    # Family member management
+│   │   ├── FamilySelector.tsx      # Family context switching
+│   │   └── AddTransactionModal.tsx # Transaction creation
+│   ├── contexts/              # React Context providers
+│   │   └── FamilyContext.tsx  # Family state management
 │   └── lib/                   # Utility functions
 │       ├── auth.ts            # NextAuth configuration
 │       ├── belvo.ts           # Belvo API integration
+│       ├── email.ts           # Email sending utilities
+│       ├── family-context.ts  # Family context helpers
 │       ├── db.ts              # Prisma client
 │       └── utils.ts           # Helper functions
 ├── prisma/
@@ -125,18 +154,37 @@ finanzas_app/
 
 ### Authentication
 - `POST /api/auth/register` - User registration
-- `GET/POST /api/auth/[...nextauth]` - NextAuth endpoints
+- `GET/POST /api/auth/[...nextauth]` - NextAuth endpoints (Google OAuth + credentials)
+
+### Family Management
+- `GET/POST /api/families` - Family CRUD operations
+- `POST /api/families/[familyId]/invite` - Send family invitations via email
+- `GET/POST /api/families/[familyId]/members` - Family member management
+- `PATCH/DELETE /api/families/[familyId]/members/[memberId]` - Member role updates
+- `GET /api/families/invitations/[token]` - Retrieve invitation details
+- `POST /api/families/invitations/accept` - Accept family invitation
+- `POST /api/migration/family-setup` - Migrate existing users to family system
 
 ### Bank Integration
 - `POST /api/belvo/connect` - Connect bank account
+- `POST /api/belvo/link` - Create bank link and import transactions
+- `POST /api/belvo/callback` - Handle Belvo webhook responses
 - `POST /api/belvo/webhook` - Belvo webhook handler
 
 ### Data Management
 - `GET /api/accounts` - Fetch user bank accounts
-- `GET/POST /api/transactions` - Transaction CRUD operations
-- `GET/POST /api/budget` - Budget management
-- `GET /api/categories` - Expense categories
-- `GET /api/analytics/overview` - Financial analytics
+- `GET/POST /api/transactions` - Combined view of manual and automatic transactions
+- `POST /api/transactions/manual` - Create manual cash transactions
+- `GET/POST /api/budget` - Budget management with real-time calculations
+- `GET/POST /api/budget/templates` - Budget template CRUD for recurring budgets
+- `POST /api/budget/generate` - Generate budget from template
+- `POST /api/budget/generate-all` - Bulk generation of missing budgets
+- `GET /api/budget/missing` - Auto-detection of missing budgets
+- `GET /api/categories` - Expense/income categories
+- `GET /api/analytics/overview` - Financial analytics and dashboard data
+
+### Automation
+- `POST /api/cron/generate-monthly-budgets` - Automatic monthly budget generation
 
 ## 🏦 Belvo Integration
 
@@ -155,11 +203,14 @@ This app uses [Belvo](https://belvo.com/) for secure bank connectivity:
 
 ### Core Models
 - **User**: User account and authentication data
+- **Family**: Family groups with shared financial data
+- **FamilyMember**: User membership in families with role-based access
+- **FamilyInvitation**: Email invitation system with secure tokens
 - **BankAccount**: Connected bank accounts with Belvo integration
-- **Transaction**: Financial transactions with categorization
+- **Transaction**: Financial transactions with categorization (manual + automatic)
 - **Category**: Expense/income categories with hierarchy
-- **Budget**: Spending limits and budget tracking
-- **SavingsGoal**: Financial goals and targets
+- **Budget**: Spending limits and budget tracking with real-time calculations
+- **BudgetTemplate**: Reusable budget configurations for recurring budgets
 
 ## 🔧 Development Commands
 
@@ -194,16 +245,27 @@ Ensure all environment variables are set in your deployment platform:
 - `DATABASE_URL` - PostgreSQL connection string
 - `NEXTAUTH_SECRET` - Secure random string for NextAuth
 - `NEXTAUTH_URL` - Your production URL
+- `GOOGLE_CLIENT_ID` - Google OAuth credentials (optional)
+- `GOOGLE_CLIENT_SECRET` - Google OAuth credentials (optional)
 - `BELVO_SECRET_ID` - Belvo API credentials
 - `BELVO_SECRET_PASSWORD` - Belvo API credentials
 - `BELVO_ENVIRONMENT` - Set to "production"
+- `EMAIL_SERVER_HOST` - SMTP server host
+- `EMAIL_SERVER_PORT` - SMTP server port
+- `EMAIL_SERVER_USER` - SMTP username
+- `EMAIL_SERVER_PASSWORD` - SMTP password
+- `EMAIL_FROM` - From email address
+- `CRON_SECRET` - Secure token for cron job authentication
 
 ## 🔒 Security Features
 
-- **Authentication**: Secure session management with NextAuth.js
+- **Authentication**: Multi-provider authentication with NextAuth.js (Google OAuth + credentials)
+- **Family Access Control**: Role-based permissions (Admin/Member/Viewer)
+- **Invitation Security**: Crypto-secure tokens with 7-day expiration
 - **Data Encryption**: Sensitive data encrypted at rest
-- **API Security**: Rate limiting and input validation
+- **API Security**: Rate limiting, input validation, and user-scoped queries
 - **Bank Integration**: Read-only access through Belvo's secure API
+- **Email Security**: SMTP authentication and secure token delivery
 - **HTTPS**: SSL/TLS encryption for all communications
 
 ## 🤝 Contributing
@@ -227,12 +289,28 @@ If you need help or have questions:
 3. Open an issue on GitHub
 4. Contact the development team
 
-## 🗺️ Roadmap
+## 🎯 Current Features Status
 
+### ✅ Completed Features
+- **Family Management**: Multi-user families with role-based access control
+- **Email Invitations**: Complete invitation flow with user onboarding
+- **Budget System**: Recurring budget templates with automatic generation
+- **Transaction Tracking**: Manual cash transactions + automatic bank imports
+- **Real-time Analytics**: Interactive dashboard with financial insights
+- **Bank Integration**: Secure Belvo integration for Colombian banks
+- **Responsive Design**: Mobile-first UI with comprehensive component library
+
+### 🚧 In Development
+- Enhanced family financial reporting
+- Advanced budget analytics and forecasting
+- Improved mobile experience
+
+### 🗺️ Roadmap
 - [ ] Mobile app development
-- [ ] Additional bank integrations
-- [ ] Investment tracking
-- [ ] Financial goal automation
+- [ ] Additional bank integrations (Plaid, CSV imports)
+- [ ] Investment tracking and portfolio management
+- [ ] Financial goal automation and recommendations
 - [ ] Multi-currency support
-- [ ] Family sharing features
-- [ ] AI-powered insights
+- [ ] Advanced family financial planning tools
+- [ ] AI-powered spending insights and predictions
+- [ ] Expense receipt scanning and categorization
