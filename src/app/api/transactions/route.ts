@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
+import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { getFamilyContext } from '@/lib/family-context'
 import { z } from 'zod'
 
 const transactionSchema = z.object({
@@ -16,12 +17,11 @@ const transactionSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user || !('id' in session.user)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const familyContext = await getFamilyContext()
+    
+    if (!familyContext?.family) {
+      return NextResponse.json({ error: 'No family context found' }, { status: 401 })
     }
-
-    const userId = session.user.id as string
 
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
@@ -35,19 +35,7 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit
 
     const where: any = {
-      OR: [
-        // Transacciones bancarias
-        {
-          account: {
-            userId
-          }
-        },
-        // Transacciones manuales
-        {
-          userId,
-          accountId: null
-        }
-      ]
+      familyId: familyContext.family.id
     }
 
     if (category) {
@@ -86,6 +74,12 @@ export async function GET(request: NextRequest) {
               name: true,
               color: true,
               icon: true
+            }
+          },
+          createdBy: {
+            select: {
+              name: true,
+              email: true
             }
           }
         },
@@ -130,12 +124,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user || !('id' in session.user)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const familyContext = await getFamilyContext()
+    
+    if (!familyContext?.family) {
+      return NextResponse.json({ error: 'No family context found' }, { status: 401 })
     }
 
-    const userId = session.user.id as string
+    // Check write permission
+    if (familyContext.family.role === 'VIEWER') {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    }
 
     const body = await request.json()
     const result = transactionSchema.safeParse(body)
@@ -150,7 +148,7 @@ export async function POST(request: NextRequest) {
     const account = await prisma.bankAccount.findFirst({
       where: { 
         id: result.data.accountId,
-        userId 
+        familyId: familyContext.family.id
       }
     })
 
@@ -161,7 +159,8 @@ export async function POST(request: NextRequest) {
     const transaction = await prisma.transaction.create({
       data: {
         ...result.data,
-        userId,
+        familyId: familyContext.family.id,
+        createdByUserId: familyContext.user.id,
         source: 'MANUAL'
       },
       include: {
@@ -176,6 +175,12 @@ export async function POST(request: NextRequest) {
             name: true,
             color: true,
             icon: true
+          }
+        },
+        createdBy: {
+          select: {
+            name: true,
+            email: true
           }
         }
       }

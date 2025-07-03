@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -10,25 +11,69 @@ import {
   TrendingDown, 
   CreditCard,
   Plus,
-  AlertCircle 
+  AlertCircle,
+  Construction 
 } from 'lucide-react'
+import { toast } from 'sonner'
+import AddTransactionModal from '@/components/AddTransactionModal'
+import { useFamily } from '@/contexts/FamilyContext'
+
+interface DashboardData {
+  totalBalance: number
+  currentMonthIncome: number
+  currentMonthExpenses: number
+  incomeChange: number
+  expenseChange: number
+  recentTransactions: Array<{
+    id: string
+    description: string
+    amount: number
+    date: string
+    category: string
+    type: string
+    createdBy: {
+      name: string | null
+      email: string
+    }
+  }>
+  budgetOverview: Array<{
+    categoryName: string
+    categoryIcon: string
+    categoryColor: string
+    percentageUsed: number
+    isOverBudget: boolean
+    isNearLimit: boolean
+  }>
+  connectedAccounts: number
+  hasConnectedAccounts: boolean
+}
 
 export default function DashboardPage() {
   const { data: session } = useSession()
+  const { currentFamily } = useFamily()
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const mockData = {
-    totalBalance: 2500000,
-    monthlyIncome: 5000000,
-    monthlyExpenses: 3200000,
-    savingsGoal: 10000000,
-    currentSavings: 1800000,
-    recentTransactions: [
-      { id: 1, description: 'Supermercado Éxito', amount: -85000, date: '2024-01-15', category: 'Groceries' },
-      { id: 2, description: 'Salario', amount: 5000000, date: '2024-01-15', category: 'Income' },
-      { id: 3, description: 'Netflix', amount: -16900, date: '2024-01-14', category: 'Entertainment' },
-      { id: 4, description: 'Gasolina', amount: -120000, date: '2024-01-13', category: 'Transportation' },
-    ]
+  const fetchDashboardData = async () => {
+    try {
+      const response = await fetch('/api/analytics/overview')
+      if (response.ok) {
+        const data = await response.json()
+        setDashboardData(data)
+      } else {
+        toast.error('Failed to load dashboard data')
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error)
+      toast.error('Failed to load dashboard data')
+    } finally {
+      setLoading(false)
+    }
   }
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
@@ -38,14 +83,35 @@ export default function DashboardPage() {
     }).format(amount)
   }
 
+  const handleUnderConstruction = (feature: string) => {
+    toast.info(`${feature} is under construction`, {
+      description: 'This feature is coming soon!'
+    })
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">
-          Welcome back, {session?.user?.name?.split(' ')[0]}!
-        </h2>
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">
+            Welcome back, {session?.user?.name?.split(' ')[0]}!
+          </h2>
+          {currentFamily && (
+            <p className="text-muted-foreground">
+              Managing finances for <span className="font-medium">{currentFamily.name}</span>
+            </p>
+          )}
+        </div>
         <div className="flex items-center space-x-2">
-          <Button>
+          <Button onClick={() => handleUnderConstruction('Bancolombia Integration')}>
             <Plus className="mr-2 h-4 w-4" />
             Connect Bank Account
           </Button>
@@ -59,7 +125,7 @@ export default function DashboardPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(mockData.totalBalance)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(dashboardData?.totalBalance || 0)}</div>
             <p className="text-xs text-muted-foreground">
               Across all accounts
             </p>
@@ -72,9 +138,12 @@ export default function DashboardPage() {
             <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{formatCurrency(mockData.monthlyIncome)}</div>
+            <div className="text-2xl font-bold text-green-600">{formatCurrency(dashboardData?.currentMonthIncome || 0)}</div>
             <p className="text-xs text-muted-foreground">
-              +20.1% from last month
+              {dashboardData?.incomeChange !== undefined ? 
+                `${dashboardData.incomeChange >= 0 ? '+' : ''}${dashboardData.incomeChange.toFixed(1)}% from last month` :
+                'No comparison data'
+              }
             </p>
           </CardContent>
         </Card>
@@ -85,9 +154,12 @@ export default function DashboardPage() {
             <TrendingDown className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{formatCurrency(mockData.monthlyExpenses)}</div>
+            <div className="text-2xl font-bold text-red-600">{formatCurrency(dashboardData?.currentMonthExpenses || 0)}</div>
             <p className="text-xs text-muted-foreground">
-              +15.3% from last month
+              {dashboardData?.expenseChange !== undefined ? 
+                `${dashboardData.expenseChange >= 0 ? '+' : ''}${dashboardData.expenseChange.toFixed(1)}% from last month` :
+                'No comparison data'
+              }
             </p>
           </CardContent>
         </Card>
@@ -98,9 +170,12 @@ export default function DashboardPage() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(mockData.currentSavings)}</div>
+            <div className="text-2xl font-bold text-muted-foreground">
+              <Construction className="h-6 w-6 inline mr-2" />
+              Under Construction
+            </div>
             <p className="text-xs text-muted-foreground">
-              {Math.round((mockData.currentSavings / mockData.savingsGoal) * 100)}% of goal
+              Savings tracking coming soon
             </p>
           </CardContent>
         </Card>
@@ -116,23 +191,30 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockData.recentTransactions.map((transaction) => (
-                <div key={transaction.id} className="flex items-center">
-                  <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {transaction.description}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {transaction.category}
-                    </p>
+              {dashboardData?.recentTransactions && dashboardData.recentTransactions.length > 0 ? (
+                dashboardData.recentTransactions.map((transaction) => (
+                  <div key={transaction.id} className="flex items-center">
+                    <div className="ml-4 space-y-1 flex-1">
+                      <p className="text-sm font-medium leading-none">
+                        {transaction.description}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {transaction.category} • Added by {transaction.createdBy.name || transaction.createdBy.email}
+                      </p>
+                    </div>
+                    <div className="ml-auto font-medium">
+                      <span className={transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}>
+                        {transaction.type === 'INCOME' ? '+' : '-'}{formatCurrency(Math.abs(transaction.amount))}
+                      </span>
+                    </div>
                   </div>
-                  <div className="ml-auto font-medium">
-                    <span className={transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}>
-                      {formatCurrency(Math.abs(transaction.amount))}
-                    </span>
-                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-sm text-muted-foreground">No recent transactions</p>
+                  <p className="text-xs text-muted-foreground">Start by adding your first transaction</p>
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>
@@ -145,19 +227,36 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button className="w-full justify-start" variant="outline">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Manual Transaction
-            </Button>
-            <Button className="w-full justify-start" variant="outline">
+            <AddTransactionModal
+              onTransactionAdded={fetchDashboardData}
+              trigger={
+                <Button className="w-full justify-start" variant="outline">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Manual Transaction
+                </Button>
+              }
+            />
+            <Button 
+              className="w-full justify-start" 
+              variant="outline"
+              onClick={() => handleUnderConstruction('Bancolombia Integration')}
+            >
               <CreditCard className="mr-2 h-4 w-4" />
               Connect Bank Account
             </Button>
-            <Button className="w-full justify-start" variant="outline">
+            <Button 
+              className="w-full justify-start" 
+              variant="outline"
+              onClick={() => handleUnderConstruction('Budget Goals')}
+            >
               <TrendingUp className="mr-2 h-4 w-4" />
               Set Budget Goal
             </Button>
-            <Button className="w-full justify-start" variant="outline">
+            <Button 
+              className="w-full justify-start" 
+              variant="outline"
+              onClick={() => handleUnderConstruction('Alerts System')}
+            >
               <AlertCircle className="mr-2 h-4 w-4" />
               View Alerts
             </Button>
@@ -175,33 +274,42 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center">
-                <div className="flex items-center space-x-2">
-                  <div className="h-3 w-3 rounded-full bg-blue-500"></div>
-                  <span className="text-sm">Food & Dining</span>
+              {dashboardData?.budgetOverview && dashboardData.budgetOverview.length > 0 ? (
+                dashboardData.budgetOverview.map((budget, index) => (
+                  <div key={index} className="flex items-center">
+                    <div className="flex items-center space-x-2">
+                      <div 
+                        className="h-3 w-3 rounded-full" 
+                        style={{ backgroundColor: budget.categoryColor }}
+                      ></div>
+                      <span className="text-sm">{budget.categoryIcon} {budget.categoryName}</span>
+                    </div>
+                    <div className="ml-auto">
+                      <Badge 
+                        variant={
+                          budget.isOverBudget ? "destructive" : 
+                          budget.isNearLimit ? "secondary" : 
+                          "outline"
+                        }
+                      >
+                        {budget.percentageUsed}% used
+                      </Badge>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-sm text-muted-foreground">No budgets created yet</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-2"
+                    onClick={() => window.location.href = '/dashboard/budget'}
+                  >
+                    Create Budget
+                  </Button>
                 </div>
-                <div className="ml-auto">
-                  <Badge variant="secondary">75% used</Badge>
-                </div>
-              </div>
-              <div className="flex items-center">
-                <div className="flex items-center space-x-2">
-                  <div className="h-3 w-3 rounded-full bg-green-500"></div>
-                  <span className="text-sm">Transportation</span>
-                </div>
-                <div className="ml-auto">
-                  <Badge variant="secondary">45% used</Badge>
-                </div>
-              </div>
-              <div className="flex items-center">
-                <div className="flex items-center space-x-2">
-                  <div className="h-3 w-3 rounded-full bg-orange-500"></div>
-                  <span className="text-sm">Entertainment</span>
-                </div>
-                <div className="ml-auto">
-                  <Badge variant="destructive">95% used</Badge>
-                </div>
-              </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -220,15 +328,27 @@ export default function DashboardPage() {
                   <CreditCard className="h-4 w-4 text-blue-600" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm font-medium">No accounts connected</p>
+                  <p className="text-sm font-medium">
+                    {dashboardData?.hasConnectedAccounts ? 
+                      `${dashboardData.connectedAccounts} account${dashboardData.connectedAccounts > 1 ? 's' : ''} connected` :
+                      'No accounts connected'
+                    }
+                  </p>
                   <p className="text-sm text-muted-foreground">
-                    Connect your Bancolombia account to get started
+                    {dashboardData?.hasConnectedAccounts ? 
+                      'Your bank accounts are synced' :
+                      'Connect your Bancolombia account to get started'
+                    }
                   </p>
                 </div>
               </div>
-              <Button className="w-full">
+              <Button 
+                className="w-full" 
+                onClick={() => handleUnderConstruction('Bancolombia Integration')}
+                disabled={dashboardData?.hasConnectedAccounts}
+              >
                 <Plus className="mr-2 h-4 w-4" />
-                Connect Bancolombia
+                {dashboardData?.hasConnectedAccounts ? 'Account Connected' : 'Connect Bancolombia'}
               </Button>
             </div>
           </CardContent>

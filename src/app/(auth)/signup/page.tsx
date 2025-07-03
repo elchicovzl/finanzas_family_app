@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,6 +17,16 @@ export default function SignUp() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  
+  const callbackUrl = searchParams.get('callbackUrl')
+  const inviteEmail = searchParams.get('email')
+  
+  useEffect(() => {
+    if (inviteEmail) {
+      setEmail(inviteEmail)
+    }
+  }, [inviteEmail])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,7 +49,10 @@ export default function SignUp() {
       })
 
       if (response.ok) {
-        router.push('/signin?message=Account created successfully')
+        const redirectUrl = callbackUrl 
+          ? `/signin?callbackUrl=${encodeURIComponent(callbackUrl)}&message=Account created successfully`
+          : '/signin?message=Account created successfully'
+        router.push(redirectUrl)
       } else {
         const data = await response.json()
         setError(data.error || 'An error occurred')
@@ -56,7 +69,10 @@ export default function SignUp() {
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl text-center">Create account</CardTitle>
         <CardDescription className="text-center">
-          Enter your information to create your account
+          {inviteEmail 
+            ? `Create your account to accept the family invitation sent to ${inviteEmail}`
+            : 'Enter your information to create your account'
+          }
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
@@ -86,6 +102,7 @@ export default function SignUp() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={!!inviteEmail}
             />
           </div>
           <div className="space-y-2">

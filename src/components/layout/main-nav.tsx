@@ -9,7 +9,8 @@ import {
   PieChart,
   Target,
   Settings,
-  Receipt
+  Receipt,
+  Users
 } from 'lucide-react'
 
 const navigation = [
@@ -37,6 +38,11 @@ const navigation = [
     name: 'Accounts',
     href: '/accounts',
     icon: CreditCard,
+  },
+  {
+    name: 'Family',
+    href: '/family',
+    icon: Users,
   },
   {
     name: 'Settings',

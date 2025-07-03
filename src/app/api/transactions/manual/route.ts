@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
+import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { getFamilyContext } from '@/lib/family-context'
 import { z } from 'zod'
 
 const manualTransactionSchema = z.object({
@@ -20,23 +21,15 @@ const manualTransactionSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user || !('id' in session.user)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const familyContext = await getFamilyContext()
+    
+    if (!familyContext?.family) {
+      return NextResponse.json({ error: 'No family context found' }, { status: 401 })
     }
 
-    const userId = session.user.id as string
-
-    // Verify user exists in database
-    const user = await prisma.user.findUnique({
-      where: { id: userId }
-    })
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found in database. Please log out and log back in.' },
-        { status: 404 }
-      )
+    // Check write permission
+    if (familyContext.family.role === 'VIEWER') {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
     const body = await request.json()
@@ -88,7 +81,8 @@ export async function POST(request: NextRequest) {
 
     // Create the manual transaction
     const transactionData: any = {
-      userId,
+      familyId: familyContext.family.id,
+      createdByUserId: familyContext.user.id,
       amount: finalAmount,
       description,
       type,
@@ -118,7 +112,7 @@ export async function POST(request: NextRequest) {
       data: transactionData,
       include: {
         category: true,
-        user: {
+        createdBy: {
           select: {
             id: true,
             name: true,

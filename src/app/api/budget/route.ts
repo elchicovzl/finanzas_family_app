@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
+import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { getFamilyContext } from '@/lib/family-context'
 import { z } from 'zod'
 
 const budgetSchema = z.object({
@@ -14,14 +15,15 @@ const budgetSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const familyContext = await getFamilyContext()
+    
+    if (!familyContext?.family) {
+      return NextResponse.json({ error: 'No family context found' }, { status: 401 })
     }
 
     const budgets = await prisma.budget.findMany({
       where: { 
-        userId: session.user.id,
+        familyId: familyContext.family.id,
         isActive: true 
       },
       include: {
@@ -47,10 +49,7 @@ export async function GET(request: NextRequest) {
       budgets.map(async (budget) => {
         const spent = await prisma.transaction.aggregate({
           where: {
-            OR: [
-              { userId: session.user.id }, // Manual transactions (cash)
-              { account: { userId: session.user.id } } // Bank account transactions
-            ],
+            familyId: familyContext.family.id,
             categoryId: budget.categoryId,
             type: 'EXPENSE',
             date: {
@@ -101,9 +100,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const familyContext = await getFamilyContext()
+    
+    if (!familyContext?.family) {
+      return NextResponse.json({ error: 'No family context found' }, { status: 401 })
+    }
+
+    // Check write permission
+    if (familyContext.family.role === 'VIEWER') {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
     const body = await request.json()
@@ -132,7 +137,7 @@ export async function POST(request: NextRequest) {
 
     const existingBudget = await prisma.budget.findFirst({
       where: {
-        userId: session.user.id,
+        familyId: familyContext.family.id,
         categoryId,
         startDate: currentMonth,
         isActive: true
@@ -148,7 +153,8 @@ export async function POST(request: NextRequest) {
 
     const budget = await prisma.budget.create({
       data: {
-        userId: session.user.id,
+        familyId: familyContext.family.id,
+        createdByUserId: familyContext.user.id,
         categoryId,
         name,
         monthlyLimit,

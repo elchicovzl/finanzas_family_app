@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { signIn, getSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,6 +17,10 @@ export default function SignIn() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  
+  const callbackUrl = searchParams.get('callbackUrl')
+  const message = searchParams.get('message')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,7 +39,11 @@ export default function SignIn() {
       } else {
         const session = await getSession()
         if (session) {
-          router.push('/dashboard')
+          if (callbackUrl) {
+            router.push(callbackUrl)
+          } else {
+            router.push('/dashboard')
+          }
         }
       }
     } catch (error) {
@@ -50,7 +58,7 @@ export default function SignIn() {
     setError('')
     try {
       await signIn('google', {
-        callbackUrl: '/dashboard'
+        callbackUrl: callbackUrl || '/dashboard'
       })
     } catch (error) {
       setError('An error occurred with Google sign in.')
@@ -67,6 +75,11 @@ export default function SignIn() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {message && (
+          <Alert>
+            <AlertDescription>{message}</AlertDescription>
+          </Alert>
+        )}
         {error && (
           <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>
@@ -144,7 +157,10 @@ export default function SignIn() {
       <CardFooter>
         <div className="text-sm text-center w-full">
           Don&apos;t have an account?{' '}
-          <Link href="/signup" className="text-blue-600 hover:underline">
+          <Link 
+            href={callbackUrl ? `/signup?callbackUrl=${encodeURIComponent(callbackUrl)}` : '/signup'} 
+            className="text-blue-600 hover:underline"
+          >
             Sign up
           </Link>
         </div>
