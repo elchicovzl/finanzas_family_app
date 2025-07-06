@@ -4,10 +4,10 @@ import { prisma } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { familyId: string } }
+  { params }: { params: Promise<{ familyId: string }> }
 ) {
   try {
-    const familyId = params.familyId
+    const { familyId } = await params
 
     // Validate user has read permission in this family
     const validation = await validateFamilyPermission(familyId, 'read')

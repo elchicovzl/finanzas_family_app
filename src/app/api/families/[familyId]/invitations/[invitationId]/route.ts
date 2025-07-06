@@ -4,11 +4,10 @@ import { prisma } from '@/lib/db'
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { familyId: string; invitationId: string } }
+  { params }: { params: Promise<{ familyId: string; invitationId: string }> }
 ) {
   try {
-    const familyId = params.familyId
-    const invitationId = params.invitationId
+    const { familyId, invitationId } = await params
 
     // Validate user has admin permission in this family
     const validation = await validateFamilyPermission(familyId, 'admin')

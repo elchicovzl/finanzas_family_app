@@ -12,9 +12,9 @@ const inviteSchema = z.object({
 })
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     familyId: string
-  }
+  }>
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
