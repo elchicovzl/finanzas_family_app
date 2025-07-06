@@ -108,15 +108,23 @@ Transaction (n) → (1) Category [optional]
 - `components/ui/`: shadcn/ui primitive components
 - `components/layout/`: Application-specific layout components (MainNav, UserNav)
 - `components/`: Feature-specific components (FamilyMemberList, FamilySelector, AddTransactionModal)
-- `contexts/`: React context providers (FamilyContext for family state management)
+- `stores/`: Zustand stores for global state management
 - Page components handle their own state and API calls
 
 #### State Management Pattern
+- **Zustand**: Primary state management solution for global state
+- **Family Store**: Global family state management via `useFamilyStore()` hook
+- **Persistence**: Automatic localStorage persistence for selected family using Zustand persist middleware
 - Local state with React hooks for component-specific data
-- Server state via direct API calls (no global state library)
-- **Family Context**: Global family state management via React Context
+- Server state via direct API calls (complementing Zustand for global state)
 - Form handling with controlled components and validation
 - Session management via NextAuth.js for user authentication
+
+#### Zustand Store Architecture
+- **Family Store** (`src/stores/family-store.ts`): Manages family data, current family selection, loading states, and family switching
+- **Store Features**: TypeScript support, persistent state, async actions, optimistic updates
+- **Usage Pattern**: Import `useFamilyStore` hook directly in components, no Provider wrapper needed
+- **State Structure**: `{ families, currentFamily, loading, error, actions }`
 
 ## Environment Configuration
 
@@ -264,6 +272,7 @@ The application implements a comprehensive budget management system with recurri
 - ✅ Family management system with role-based access control
 - ✅ Email invitation system with complete user onboarding flow
 - ✅ Family context switching and multi-family support
+- ✅ Zustand state management for global application state
 
 ### Budget Page Features
 - **Tabbed interface**: Separate views for Active Budgets and Templates

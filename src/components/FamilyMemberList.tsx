@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useFamily } from '@/contexts/FamilyContext'
+import { useFamilyStore } from '@/stores/family-store'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -62,7 +62,7 @@ interface FamilyInvitation {
 }
 
 export function FamilyMemberList() {
-  const { currentFamily, refreshFamilies } = useFamily()
+  const { currentFamily, refreshFamilies } = useFamilyStore()
   const [members, setMembers] = useState<FamilyMember[]>([])
   const [invitations, setInvitations] = useState<FamilyInvitation[]>([])
   const [loading, setLoading] = useState(true)

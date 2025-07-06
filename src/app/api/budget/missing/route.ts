@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { getFamilyContext } from '@/lib/family-context'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const familyContext = await getFamilyContext()
+    if (!familyContext?.family?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -17,7 +16,7 @@ export async function GET(request: NextRequest) {
     // Get all active templates with auto-generate enabled
     const autoTemplates = await prisma.budgetTemplate.findMany({
       where: {
-        userId: session.user.id,
+        familyId: familyContext.family.id,
         isActive: true,
         autoGenerate: true
       },
@@ -38,7 +37,7 @@ export async function GET(request: NextRequest) {
     for (const template of autoTemplates) {
       const existingBudget = await prisma.budget.findFirst({
         where: {
-          userId: session.user.id,
+          familyId: familyContext.family.id,
           categoryId: template.categoryId,
           startDate: {
             gte: currentMonthStart,
