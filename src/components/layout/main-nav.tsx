@@ -10,7 +10,8 @@ import {
   Target,
   Settings,
   Receipt,
-  Users
+  Users,
+  Bell
 } from 'lucide-react'
 
 const navigation = [
@@ -28,6 +29,11 @@ const navigation = [
     name: 'Budget',
     href: '/budget',
     icon: Target,
+  },
+  {
+    name: 'Reminders',
+    href: '/reminders',
+    icon: Bell,
   },
   {
     name: 'Analytics',

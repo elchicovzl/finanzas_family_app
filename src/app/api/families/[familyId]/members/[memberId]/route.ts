@@ -9,11 +9,10 @@ const updateMemberSchema = z.object({
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { familyId: string; memberId: string } }
+  { params }: { params: Promise<{ familyId: string; memberId: string }> }
 ) {
   try {
-    const familyId = params.familyId
-    const memberId = params.memberId
+    const { familyId, memberId } = await params
 
     // Validate user has admin permission in this family
     const validation = await validateFamilyPermission(familyId, 'admin')
@@ -83,11 +82,10 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { familyId: string; memberId: string } }
+  { params }: { params: Promise<{ familyId: string; memberId: string }> }
 ) {
   try {
-    const familyId = params.familyId
-    const memberId = params.memberId
+    const { familyId, memberId } = await params
 
     // Validate user has admin permission in this family
     const validation = await validateFamilyPermission(familyId, 'admin')

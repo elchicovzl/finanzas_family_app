@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/generate-monthly-budgets",
       "schedule": "0 0 1 * *"
+    },
+    {
+      "path": "/api/cron/check-reminders",
+      "schedule": "0 9 * * *"
     }
   ]
 }
