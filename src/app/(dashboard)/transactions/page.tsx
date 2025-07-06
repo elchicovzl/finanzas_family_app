@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/table'
 import { Search, Download, User } from 'lucide-react'
 import AddTransactionModal from '@/components/AddTransactionModal'
-import { useFamily } from '@/contexts/FamilyContext'
+import { useFamilyStore } from '@/stores/family-store'
 
 interface Transaction {
   id: string
@@ -54,7 +54,7 @@ interface TransactionResponse {
 }
 
 export default function TransactionsPage() {
-  const { currentFamily } = useFamily()
+  const { currentFamily } = useFamilyStore()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')

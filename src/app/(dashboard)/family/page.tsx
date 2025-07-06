@@ -1,10 +1,10 @@
 'use client'
 
 import { FamilyMemberList } from '@/components/FamilyMemberList'
-import { useFamily } from '@/contexts/FamilyContext'
+import { useFamilyStore } from '@/stores/family-store'
 
 export default function FamilyPage() {
-  const { currentFamily } = useFamily()
+  const { currentFamily } = useFamilyStore()
 
   return (
     <div className="space-y-8">

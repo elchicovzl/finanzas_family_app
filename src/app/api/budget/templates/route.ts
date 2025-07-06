@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { z } from 'zod'
+import { getFamilyContext } from '@/lib/family-context'
 
 const createTemplateSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -15,14 +14,14 @@ const createTemplateSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const familyContext = await getFamilyContext()
+    if (!familyContext?.family?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const templates = await prisma.budgetTemplate.findMany({
       where: {
-        userId: session.user.id,
+        familyId: familyContext.family.id,
         isActive: true
       },
       include: {
@@ -67,19 +66,19 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const familyContext = await getFamilyContext()
+    if (!familyContext?.family?.id || !familyContext?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()
     const validatedData = createTemplateSchema.parse(body)
 
-    // Check if template already exists for this user and category
+    // Check if template already exists for this family and category
     const existingTemplate = await prisma.budgetTemplate.findUnique({
       where: {
-        userId_categoryId: {
-          userId: session.user.id,
+        familyId_categoryId: {
+          familyId: familyContext.family.id,
           categoryId: validatedData.categoryId
         }
       }
@@ -94,7 +93,8 @@ export async function POST(request: NextRequest) {
 
     const template = await prisma.budgetTemplate.create({
       data: {
-        userId: session.user.id,
+        familyId: familyContext.family.id,
+        createdByUserId: familyContext.user.id,
         categoryId: validatedData.categoryId,
         name: validatedData.name,
         monthlyLimit: validatedData.monthlyLimit,

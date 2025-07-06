@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useFamily } from '@/contexts/FamilyContext'
+import { useFamilyStore } from '@/stores/family-store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -32,7 +32,7 @@ import {
 import { toast } from 'sonner'
 
 export function FamilySelector() {
-  const { families, currentFamily, switchFamily, refreshFamilies } = useFamily()
+  const { families, currentFamily, switchFamily, refreshFamilies } = useFamilyStore()
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false)
   const [loading, setLoading] = useState(false)

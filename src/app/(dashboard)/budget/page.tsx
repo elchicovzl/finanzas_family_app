@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/dialog'
 import { Plus, Target, AlertTriangle, CheckCircle, TrendingUp, LayoutTemplate, Play, Settings, Bell, Zap } from 'lucide-react'
 import { toast } from 'sonner'
-import { useFamily } from '@/contexts/FamilyContext'
+import { useFamilyStore } from '@/stores/family-store'
 
 interface Budget {
   id: string
@@ -83,7 +83,7 @@ interface MissingBudgetsResponse {
 }
 
 export default function BudgetPage() {
-  const { currentFamily } = useFamily()
+  const { currentFamily } = useFamilyStore()
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [templates, setTemplates] = useState<BudgetTemplate[]>([])
   const [categories, setCategories] = useState<Category[]>([])

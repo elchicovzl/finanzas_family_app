@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import AddTransactionModal from '@/components/AddTransactionModal'
-import { useFamily } from '@/contexts/FamilyContext'
+import { useFamilyStore } from '@/stores/family-store'
 
 interface DashboardData {
   totalBalance: number
@@ -50,7 +50,7 @@ interface DashboardData {
 
 export default function DashboardPage() {
   const { data: session } = useSession()
-  const { currentFamily } = useFamily()
+  const { currentFamily } = useFamilyStore()
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
 
