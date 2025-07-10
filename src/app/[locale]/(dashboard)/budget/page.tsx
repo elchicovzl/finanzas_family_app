@@ -21,6 +21,7 @@ import {
 import { Plus, Target, AlertTriangle, CheckCircle, TrendingUp, LayoutTemplate, Play, Settings, Bell, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 import { useFamilyStore } from '@/stores/family-store'
+import { useTranslations } from '@/hooks/use-translations'
 
 interface Budget {
   id: string
@@ -84,6 +85,7 @@ interface MissingBudgetsResponse {
 
 export default function BudgetPage() {
   const { currentFamily } = useFamilyStore()
+  const { t, locale } = useTranslations()
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [templates, setTemplates] = useState<BudgetTemplate[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -168,7 +170,7 @@ export default function BudgetPage() {
     e.preventDefault()
     
     if (!formData.name || !formData.categoryId || !formData.monthlyLimit) {
-      toast.error('Please fill in all required fields')
+      toast.error(t('budget.fillAllRequired'))
       return
     }
 
@@ -187,7 +189,7 @@ export default function BudgetPage() {
       })
 
       if (response.ok) {
-        toast.success('Budget created successfully')
+        toast.success(t('messages.budgetCreated'))
         fetchBudgets()
         setDialogOpen(false)
         setFormData({
@@ -198,10 +200,10 @@ export default function BudgetPage() {
         })
       } else {
         const error = await response.json()
-        toast.error(error.error || 'Failed to create budget')
+        toast.error(error.error || t('budget.failedToCreateBudget'))
       }
     } catch (error) {
-      toast.error('An error occurred while creating the budget')
+      toast.error(t('budget.errorCreatingBudget'))
     }
   }
 
@@ -209,7 +211,7 @@ export default function BudgetPage() {
     e.preventDefault()
     
     if (!templateFormData.name || !templateFormData.categoryId || !templateFormData.monthlyLimit) {
-      toast.error('Please fill in all required fields')
+      toast.error(t('budget.fillAllRequired'))
       return
     }
 
@@ -229,7 +231,7 @@ export default function BudgetPage() {
       })
 
       if (response.ok) {
-        toast.success('Budget template created successfully')
+        toast.success(t('budget.templateCreatedSuccess'))
         fetchTemplates()
         setTemplateDialogOpen(false)
         setTemplateFormData({
@@ -241,10 +243,10 @@ export default function BudgetPage() {
         })
       } else {
         const error = await response.json()
-        toast.error(error.error || 'Failed to create template')
+        toast.error(error.error || t('budget.failedToCreateTemplate'))
       }
     } catch (error) {
-      toast.error('An error occurred while creating the template')
+      toast.error(t('budget.errorCreatingTemplate'))
     }
   }
 
@@ -259,14 +261,14 @@ export default function BudgetPage() {
       })
 
       if (response.ok) {
-        toast.success('Budget generated successfully')
+        toast.success(t('budget.budgetGeneratedSuccess'))
         await Promise.all([fetchBudgets(), fetchTemplates(), checkMissingBudgets()])
       } else {
         const error = await response.json()
-        toast.error(error.error || 'Failed to generate budget')
+        toast.error(error.error || t('budget.failedToGenerateBudget'))
       }
     } catch (error) {
-      toast.error('An error occurred while generating the budget')
+      toast.error(t('budget.errorGeneratingBudget'))
     }
   }
 
@@ -286,16 +288,16 @@ export default function BudgetPage() {
 
       if (response.ok) {
         const result = await response.json()
-        toast.success(`Generated ${result.generatedCount} budgets for ${result.period}`)
+        toast.success(t('budget.generatedBudgetsSuccess', { count: result.generatedCount, period: result.period }))
         
         // Refresh all data
         await Promise.all([fetchBudgets(), fetchTemplates(), checkMissingBudgets()])
       } else {
         const error = await response.json()
-        toast.error(error.error || 'Failed to generate budgets')
+        toast.error(error.error || t('budget.failedToGenerateBudgets'))
       }
     } catch (error) {
-      toast.error('An error occurred while generating budgets')
+      toast.error(t('budget.errorGeneratingBudgets'))
     } finally {
       setGeneratingAll(false)
     }
@@ -303,11 +305,11 @@ export default function BudgetPage() {
 
   const getBudgetStatus = (budget: Budget) => {
     if (budget.isOverBudget) {
-      return { color: 'destructive', icon: AlertTriangle, text: 'Over Budget' }
+      return { color: 'destructive', icon: AlertTriangle, text: t('budget.overBudget') }
     } else if (budget.isNearLimit) {
-      return { color: 'warning', icon: AlertTriangle, text: 'Near Limit' }
+      return { color: 'warning', icon: AlertTriangle, text: t('budget.nearLimit') }
     } else {
-      return { color: 'success', icon: CheckCircle, text: 'On Track' }
+      return { color: 'success', icon: CheckCircle, text: t('budget.onTrack') }
     }
   }
 
@@ -315,6 +317,15 @@ export default function BudgetPage() {
     if (percentage >= 100) return 'bg-red-500'
     if (percentage >= 80) return 'bg-yellow-500'
     return 'bg-green-500'
+  }
+
+  const formatCurrency = (amount: number) => {
+    const localeCode = locale === 'es' ? 'es-CO' : 'en-US'
+    return new Intl.NumberFormat(localeCode, {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0
+    }).format(amount)
   }
 
   if (loading) {
@@ -334,9 +345,9 @@ export default function BudgetPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Budget Management</h2>
+          <h2 className="text-3xl font-bold tracking-tight">{t('budget.title')}</h2>
           <p className="text-muted-foreground">
-            {currentFamily ? `Set and track spending limits for ${currentFamily.name}` : 'Set and track your spending limits by category'}
+            {currentFamily ? t('budget.descriptionFamily', { familyName: currentFamily.name }) : t('budget.description')}
           </p>
         </div>
         <div className="flex space-x-2">
@@ -344,35 +355,35 @@ export default function BudgetPage() {
             <DialogTrigger asChild>
               <Button variant="outline">
                 <LayoutTemplate className="mr-2 h-4 w-4" />
-                Create Template
+                {t('budget.createTemplate')}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Create Budget Template</DialogTitle>
+                <DialogTitle>{t('budget.createTemplateTitle')}</DialogTitle>
                 <DialogDescription>
-                  Create a reusable template for recurring budgets
+                  {t('budget.createTemplateDesc')}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleTemplateSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="template-name">Template Name</Label>
+                  <Label htmlFor="template-name">{t('budget.templateName')}</Label>
                   <Input
                     id="template-name"
-                    placeholder="e.g., Monthly Groceries Template"
+                    placeholder={t('budget.templateNamePlaceholder')}
                     value={templateFormData.name}
                     onChange={(e) => setTemplateFormData(prev => ({ ...prev, name: e.target.value }))}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="template-category">Category</Label>
+                  <Label htmlFor="template-category">{t('common.category')}</Label>
                   <Select 
                     value={templateFormData.categoryId} 
                     onValueChange={(value) => setTemplateFormData(prev => ({ ...prev, categoryId: value }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a category" />
+                      <SelectValue placeholder={t('budget.selectCategory')} />
                     </SelectTrigger>
                     <SelectContent>
                       {categories.map((category) => (
@@ -387,11 +398,11 @@ export default function BudgetPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="template-limit">Monthly Limit (COP)</Label>
+                  <Label htmlFor="template-limit">{t('budget.monthlyLimit')}</Label>
                   <Input
                     id="template-limit"
                     type="text"
-                    placeholder="$500,000"
+                    placeholder={t('budget.monthlyLimitPlaceholder')}
                     value={templateFormData.monthlyLimit}
                     onChange={(e) => {
                       const value = e.target.value
@@ -403,7 +414,7 @@ export default function BudgetPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="template-threshold">Alert Threshold (%)</Label>
+                  <Label htmlFor="template-threshold">{t('budget.alertThresholdPercent')}</Label>
                   <Select 
                     value={templateFormData.alertThreshold} 
                     onValueChange={(value) => setTemplateFormData(prev => ({ ...prev, alertThreshold: value }))}
@@ -425,10 +436,10 @@ export default function BudgetPage() {
                     checked={templateFormData.autoGenerate}
                     onCheckedChange={(checked) => setTemplateFormData(prev => ({ ...prev, autoGenerate: checked }))}
                   />
-                  <Label htmlFor="auto-generate">Auto-generate monthly budgets</Label>
+                  <Label htmlFor="auto-generate">{t('budget.autoGenerateMonthly')}</Label>
                 </div>
                 <Button type="submit" className="w-full">
-                  Create Template
+                  {t('budget.createTemplate')}
                 </Button>
               </form>
             </DialogContent>
@@ -437,35 +448,35 @@ export default function BudgetPage() {
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
-                Create Budget
+                {t('budget.createBudget')}
               </Button>
             </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Create New Budget</DialogTitle>
+              <DialogTitle>{t('budget.createBudgetTitle')}</DialogTitle>
               <DialogDescription>
-                Set a spending limit for a specific category
+                {t('budget.createBudgetDesc')}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Budget Name</Label>
+                <Label htmlFor="name">{t('budget.budgetName')}</Label>
                 <Input
                   id="name"
-                  placeholder="e.g., Monthly Groceries"
+                  placeholder={t('budget.budgetNamePlaceholder')}
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
+                <Label htmlFor="category">{t('common.category')}</Label>
                 <Select 
                   value={formData.categoryId} 
                   onValueChange={(value) => setFormData(prev => ({ ...prev, categoryId: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
+                    <SelectValue placeholder={t('budget.selectCategory')} />
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((category) => (
@@ -480,11 +491,11 @@ export default function BudgetPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="limit">Monthly Limit (COP)</Label>
+                <Label htmlFor="limit">{t('budget.monthlyLimit')}</Label>
                 <Input
                   id="limit"
                   type="text"
-                  placeholder="$500,000"
+                  placeholder={t('budget.monthlyLimitPlaceholder')}
                   value={formData.monthlyLimit}
                   onChange={(e) => {
                     const value = e.target.value
@@ -498,7 +509,7 @@ export default function BudgetPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="threshold">Alert Threshold (%)</Label>
+                <Label htmlFor="threshold">{t('budget.alertThresholdPercent')}</Label>
                 <Select 
                   value={formData.alertThreshold} 
                   onValueChange={(value) => setFormData(prev => ({ ...prev, alertThreshold: value }))}
@@ -515,7 +526,7 @@ export default function BudgetPage() {
                 </Select>
               </div>
               <Button type="submit" className="w-full">
-                Create Budget
+                {t('budget.createBudget')}
               </Button>
             </form>
           </DialogContent>
@@ -534,10 +545,10 @@ export default function BudgetPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-orange-900">
-                    {missingBudgets.missingCount} Budget{missingBudgets.missingCount > 1 ? 's' : ''} Missing
+                    {t('budget.budgetsMissing', { count: missingBudgets.missingCount, plural: missingBudgets.missingCount > 1 ? 's' : '' })}
                   </h3>
                   <p className="text-sm text-orange-700">
-                    You have auto-templates that need budgets for {missingBudgets.currentMonth}
+                    {t('budget.budgetsMissingDesc', { month: missingBudgets.currentMonth })}
                   </p>
                 </div>
               </div>
@@ -547,7 +558,7 @@ export default function BudgetPage() {
                   size="sm"
                   onClick={() => setActiveTab('templates')}
                 >
-                  View Templates
+                  {t('budget.viewTemplates')}
                 </Button>
                 <Button
                   onClick={generateAllMissingBudgets}
@@ -557,12 +568,12 @@ export default function BudgetPage() {
                   {generatingAll ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Generating...
+                      {t('budget.generating')}
                     </>
                   ) : (
                     <>
                       <Zap className="mr-2 h-4 w-4" />
-                      Generate All ({missingBudgets.missingCount})
+                      {t('budget.generateAllCount', { count: missingBudgets.missingCount })}
                     </>
                   )}
                 </Button>
@@ -571,7 +582,7 @@ export default function BudgetPage() {
             
             {/* Show details of missing budgets */}
             <div className="mt-4 space-y-2">
-              <p className="text-sm font-medium text-orange-900">Missing budgets:</p>
+              <p className="text-sm font-medium text-orange-900">{t('budget.missingBudgetsLabel')}</p>
               <div className="flex flex-wrap gap-2">
                 {missingBudgets.missingBudgets.slice(0, 3).map((missing, index) => (
                   <Badge key={index} variant="outline" className="border-orange-300 text-orange-700">
@@ -580,7 +591,7 @@ export default function BudgetPage() {
                 ))}
                 {missingBudgets.missingBudgets.length > 3 && (
                   <Badge variant="outline" className="border-orange-300 text-orange-700">
-                    +{missingBudgets.missingBudgets.length - 3} more
+                    {t('budget.more', { count: missingBudgets.missingBudgets.length - 3 })}
                   </Badge>
                 )}
               </div>
@@ -591,75 +602,66 @@ export default function BudgetPage() {
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'budgets' | 'templates')}>
         <TabsList>
-          <TabsTrigger value="budgets">Active Budgets</TabsTrigger>
-          <TabsTrigger value="templates">Templates</TabsTrigger>
+          <TabsTrigger value="budgets">{t('budget.activeBudgets')}</TabsTrigger>
+          <TabsTrigger value="templates">{t('budget.templates')}</TabsTrigger>
         </TabsList>
         
         <TabsContent value="budgets" className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Budget</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('budget.totalBudget')}</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {new Intl.NumberFormat('es-CO', {
-                style: 'currency',
-                currency: 'COP'
-              }).format(totalBudget)}
+              {formatCurrency(totalBudget)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Across all budgets
+              {t('budget.acrossAllBudgets')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('budget.totalSpent')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              {new Intl.NumberFormat('es-CO', {
-                style: 'currency',
-                currency: 'COP'
-              }).format(totalSpent)}
+              {formatCurrency(totalSpent)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {Math.round(overallPercentage)}% of total budget
+              {t('budget.percentOfBudget', { percent: Math.round(overallPercentage) })}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Remaining</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('budget.remaining')}</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${totalRemaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {new Intl.NumberFormat('es-CO', {
-                style: 'currency',
-                currency: 'COP'
-              }).format(totalRemaining)}
+              {formatCurrency(totalRemaining)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Available to spend
+              {t('budget.availableToSpend')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Budgets</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('budget.activeBudgets')}</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{budgets.length}</div>
             <p className="text-xs text-muted-foreground">
-              Categories with budgets
+              {t('budget.categoriesWithBudgets')}
             </p>
           </CardContent>
         </Card>
@@ -687,21 +689,21 @@ export default function BudgetPage() {
                   </Badge>
                 </div>
                 <CardDescription>
-                  {budget.category.name} • This month
+                  {budget.category.name} • {t('budget.thisMonth')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>Spent</span>
+                    <span>{t('budget.spent')}</span>
                     <span className="font-medium">{budget.formattedSpent}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span>Budget</span>
+                    <span>{t('budget.budget')}</span>
                     <span className="font-medium">{budget.formattedLimit}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span>Remaining</span>
+                    <span>{t('budget.remaining')}</span>
                     <span className={`font-medium ${budget.remainingBudget >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {budget.formattedRemaining}
                     </span>
@@ -710,7 +712,7 @@ export default function BudgetPage() {
                 
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>Progress</span>
+                    <span>{t('budget.progress')}</span>
                     <span>{budget.percentageUsed}%</span>
                   </div>
                   <Progress 
@@ -727,13 +729,13 @@ export default function BudgetPage() {
               <Card className="col-span-full">
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <Target className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No budgets created yet</h3>
+                  <h3 className="text-lg font-semibold mb-2">{t('budget.noBudgetsCreated')}</h3>
                   <p className="text-muted-foreground text-center mb-4">
-                    Create your first budget to start tracking your spending limits
+                    {t('budget.noBudgetsCreatedDesc')}
                   </p>
                   <Button onClick={() => setDialogOpen(true)}>
                     <Plus className="mr-2 h-4 w-4" />
-                    Create Your First Budget
+                    {t('budget.createFirstBudget')}
                   </Button>
                 </CardContent>
               </Card>
@@ -752,7 +754,7 @@ export default function BudgetPage() {
                       <CardTitle className="text-lg">{template.name}</CardTitle>
                     </div>
                     <Badge variant={template.autoGenerate ? "default" : "secondary"}>
-                      {template.autoGenerate ? "Auto" : "Manual"}
+                      {template.autoGenerate ? t('budget.auto') : t('budget.manual')}
                     </Badge>
                   </div>
                   <CardDescription>
@@ -762,16 +764,16 @@ export default function BudgetPage() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span>Limit</span>
+                      <span>{t('budget.limit')}</span>
                       <span className="font-medium">{template.formattedLimit}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span>Alert at</span>
+                      <span>{t('budget.alertAt')}</span>
                       <span className="font-medium">{template.alertThreshold}%</span>
                     </div>
                     {template.lastGenerated && (
                       <div className="flex justify-between text-sm">
-                        <span>Last generated</span>
+                        <span>{t('budget.lastGenerated')}</span>
                         <span className="font-medium">
                           {new Date(template.lastGenerated).toLocaleDateString()}
                         </span>
@@ -786,14 +788,14 @@ export default function BudgetPage() {
                       size="sm"
                     >
                       <Play className="mr-2 h-4 w-4" />
-                      Generate Budget
+                      {t('budget.generateBudget')}
                     </Button>
                     <Button 
                       variant="outline" 
                       size="sm"
                       onClick={() => {
                         // TODO: Implement edit template functionality
-                        toast.info('Edit template functionality coming soon')
+                        toast.info(t('budget.editTemplateSoon'))
                       }}
                     >
                       <Settings className="h-4 w-4" />
@@ -807,13 +809,13 @@ export default function BudgetPage() {
               <Card className="col-span-full">
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <LayoutTemplate className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No templates created yet</h3>
+                  <h3 className="text-lg font-semibold mb-2">{t('budget.noTemplatesCreated')}</h3>
                   <p className="text-muted-foreground text-center mb-4">
-                    Create templates to automatically generate recurring budgets
+                    {t('budget.noTemplatesCreatedDesc')}
                   </p>
                   <Button onClick={() => setTemplateDialogOpen(true)}>
                     <Plus className="mr-2 h-4 w-4" />
-                    Create Your First Template
+                    {t('budget.createFirstTemplate')}
                   </Button>
                 </CardContent>
               </Card>

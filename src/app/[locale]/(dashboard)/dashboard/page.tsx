@@ -17,6 +17,7 @@ import {
 import { toast } from 'sonner'
 import AddTransactionModal from '@/components/AddTransactionModal'
 import { useFamilyStore } from '@/stores/family-store'
+import { useTranslations } from '@/hooks/use-translations'
 
 interface DashboardData {
   totalBalance: number
@@ -51,6 +52,7 @@ interface DashboardData {
 export default function DashboardPage() {
   const { data: session } = useSession()
   const { currentFamily } = useFamilyStore()
+  const { t, locale } = useTranslations()
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -61,11 +63,11 @@ export default function DashboardPage() {
         const data = await response.json()
         setDashboardData(data)
       } else {
-        toast.error('Failed to load dashboard data')
+        toast.error(t('messages.errorOccurred'))
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
-      toast.error('Failed to load dashboard data')
+      toast.error(t('messages.errorOccurred'))
     } finally {
       setLoading(false)
     }
@@ -76,7 +78,8 @@ export default function DashboardPage() {
   }, [])
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-CO', {
+    const localeCode = locale === 'es' ? 'es-CO' : 'en-US'
+    return new Intl.NumberFormat(localeCode, {
       style: 'currency',
       currency: 'COP',
       minimumFractionDigits: 0
@@ -92,7 +95,10 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">{t('common.loading')}</p>
+        </div>
       </div>
     )
   }
@@ -102,18 +108,18 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between space-y-2">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">
-            Welcome back, {session?.user?.name?.split(' ')[0]}!
+            {t('dashboard.welcomeBack')}, {session?.user?.name?.split(' ')[0]}!
           </h2>
           {currentFamily && (
             <p className="text-muted-foreground">
-              Managing finances for <span className="font-medium">{currentFamily.name}</span>
+              {locale === 'es' ? 'Gestionando finanzas para' : 'Managing finances for'} <span className="font-medium">{currentFamily.name}</span>
             </p>
           )}
         </div>
         <div className="flex items-center space-x-2">
           <Button onClick={() => handleUnderConstruction('Bancolombia Integration')}>
             <Plus className="mr-2 h-4 w-4" />
-            Connect Bank Account
+            {t('dashboard.connectBank')}
           </Button>
         </div>
       </div>
@@ -121,28 +127,28 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.totalBalance')}</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(dashboardData?.totalBalance || 0)}</div>
             <p className="text-xs text-muted-foreground">
-              Across all accounts
+              {locale === 'es' ? 'Entre todas las cuentas' : 'Across all accounts'}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Income</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.monthlyIncome')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{formatCurrency(dashboardData?.currentMonthIncome || 0)}</div>
             <p className="text-xs text-muted-foreground">
               {dashboardData?.incomeChange !== undefined ? 
-                `${dashboardData.incomeChange >= 0 ? '+' : ''}${dashboardData.incomeChange.toFixed(1)}% from last month` :
-                'No comparison data'
+                `${dashboardData.incomeChange >= 0 ? '+' : ''}${dashboardData.incomeChange.toFixed(1)}% ${locale === 'es' ? 'del mes pasado' : 'from last month'}` :
+                (locale === 'es' ? 'Sin datos de comparación' : 'No comparison data')
               }
             </p>
           </CardContent>
@@ -150,15 +156,15 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Expenses</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.monthlyExpenses')}</CardTitle>
             <TrendingDown className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">{formatCurrency(dashboardData?.currentMonthExpenses || 0)}</div>
             <p className="text-xs text-muted-foreground">
               {dashboardData?.expenseChange !== undefined ? 
-                `${dashboardData.expenseChange >= 0 ? '+' : ''}${dashboardData.expenseChange.toFixed(1)}% from last month` :
-                'No comparison data'
+                `${dashboardData.expenseChange >= 0 ? '+' : ''}${dashboardData.expenseChange.toFixed(1)}% ${locale === 'es' ? 'del mes pasado' : 'from last month'}` :
+                (locale === 'es' ? 'Sin datos de comparación' : 'No comparison data')
               }
             </p>
           </CardContent>
@@ -166,16 +172,16 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Savings Progress</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.savings')}</CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-muted-foreground">
               <Construction className="h-6 w-6 inline mr-2" />
-              Under Construction
+              {locale === 'es' ? 'En Construcción' : 'Under Construction'}
             </div>
             <p className="text-xs text-muted-foreground">
-              Savings tracking coming soon
+              {locale === 'es' ? 'Seguimiento de ahorros próximamente' : 'Savings tracking coming soon'}
             </p>
           </CardContent>
         </Card>
@@ -184,9 +190,9 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">
           <CardHeader>
-            <CardTitle>Recent Transactions</CardTitle>
+            <CardTitle>{t('dashboard.recentTransactions')}</CardTitle>
             <CardDescription>
-              Your latest financial activity
+              {locale === 'es' ? 'Tu actividad financiera más reciente' : 'Your latest financial activity'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -199,7 +205,7 @@ export default function DashboardPage() {
                         {transaction.description}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {transaction.category} • Added by {transaction.createdBy.name || transaction.createdBy.email}
+                        {transaction.category} • {locale === 'es' ? 'Agregado por' : 'Added by'} {transaction.createdBy.name || transaction.createdBy.email}
                       </p>
                     </div>
                     <div className="ml-auto font-medium">
@@ -211,8 +217,8 @@ export default function DashboardPage() {
                 ))
               ) : (
                 <div className="text-center py-4">
-                  <p className="text-sm text-muted-foreground">No recent transactions</p>
-                  <p className="text-xs text-muted-foreground">Start by adding your first transaction</p>
+                  <p className="text-sm text-muted-foreground">{t('dashboard.noTransactions')}</p>
+                  <p className="text-xs text-muted-foreground">{locale === 'es' ? 'Comienza agregando tu primera transacción' : 'Start by adding your first transaction'}</p>
                 </div>
               )}
             </div>
@@ -221,9 +227,9 @@ export default function DashboardPage() {
 
         <Card className="col-span-3">
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+            <CardTitle>{t('dashboard.quickActions')}</CardTitle>
             <CardDescription>
-              Manage your finances quickly
+              {locale === 'es' ? 'Gestiona tus finanzas rápidamente' : 'Manage your finances quickly'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -232,7 +238,7 @@ export default function DashboardPage() {
               trigger={
                 <Button className="w-full justify-start" variant="outline">
                   <Plus className="mr-2 h-4 w-4" />
-                  Add Manual Transaction
+                  {t('dashboard.addTransaction')}
                 </Button>
               }
             />
@@ -242,7 +248,7 @@ export default function DashboardPage() {
               onClick={() => handleUnderConstruction('Bancolombia Integration')}
             >
               <CreditCard className="mr-2 h-4 w-4" />
-              Connect Bank Account
+              {t('dashboard.connectBank')}
             </Button>
             <Button 
               className="w-full justify-start" 
@@ -250,7 +256,7 @@ export default function DashboardPage() {
               onClick={() => handleUnderConstruction('Budget Goals')}
             >
               <TrendingUp className="mr-2 h-4 w-4" />
-              Set Budget Goal
+              {locale === 'es' ? 'Establecer Meta de Presupuesto' : 'Set Budget Goal'}
             </Button>
             <Button 
               className="w-full justify-start" 
@@ -258,7 +264,7 @@ export default function DashboardPage() {
               onClick={() => handleUnderConstruction('Alerts System')}
             >
               <AlertCircle className="mr-2 h-4 w-4" />
-              View Alerts
+              {locale === 'es' ? 'Ver Alertas' : 'View Alerts'}
             </Button>
           </CardContent>
         </Card>
@@ -267,9 +273,9 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Budget Overview</CardTitle>
+            <CardTitle>{t('dashboard.budgetOverview')}</CardTitle>
             <CardDescription>
-              How you&apos;re doing this month
+              {locale === 'es' ? 'Cómo te va este mes' : "How you're doing this month"}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -292,21 +298,21 @@ export default function DashboardPage() {
                           "outline"
                         }
                       >
-                        {budget.percentageUsed}% used
+                        {budget.percentageUsed}% {locale === 'es' ? 'usado' : 'used'}
                       </Badge>
                     </div>
                   </div>
                 ))
               ) : (
                 <div className="text-center py-4">
-                  <p className="text-sm text-muted-foreground">No budgets created yet</p>
+                  <p className="text-sm text-muted-foreground">{locale === 'es' ? 'Aún no hay presupuestos creados' : 'No budgets created yet'}</p>
                   <Button 
                     variant="outline" 
                     size="sm" 
                     className="mt-2"
-                    onClick={() => window.location.href = '/dashboard/budget'}
+                    onClick={() => window.location.href = `/${locale}/budget`}
                   >
-                    Create Budget
+                    {t('dashboard.createBudget')}
                   </Button>
                 </div>
               )}
@@ -316,9 +322,9 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Account Status</CardTitle>
+            <CardTitle>{locale === 'es' ? 'Estado de Cuentas' : 'Account Status'}</CardTitle>
             <CardDescription>
-              Your connected accounts
+              {locale === 'es' ? 'Tus cuentas conectadas' : 'Your connected accounts'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -330,14 +336,17 @@ export default function DashboardPage() {
                 <div className="space-y-1">
                   <p className="text-sm font-medium">
                     {dashboardData?.hasConnectedAccounts ? 
-                      `${dashboardData.connectedAccounts} account${dashboardData.connectedAccounts > 1 ? 's' : ''} connected` :
-                      'No accounts connected'
+                      (locale === 'es' ? 
+                        `${dashboardData.connectedAccounts} cuenta${dashboardData.connectedAccounts > 1 ? 's' : ''} conectada${dashboardData.connectedAccounts > 1 ? 's' : ''}` :
+                        `${dashboardData.connectedAccounts} account${dashboardData.connectedAccounts > 1 ? 's' : ''} connected`
+                      ) :
+                      (locale === 'es' ? 'No hay cuentas conectadas' : 'No accounts connected')
                     }
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {dashboardData?.hasConnectedAccounts ? 
-                      'Your bank accounts are synced' :
-                      'Connect your Bancolombia account to get started'
+                      (locale === 'es' ? 'Tus cuentas bancarias están sincronizadas' : 'Your bank accounts are synced') :
+                      (locale === 'es' ? 'Conecta tu cuenta de Bancolombia para empezar' : 'Connect your Bancolombia account to get started')
                     }
                   </p>
                 </div>
@@ -348,7 +357,10 @@ export default function DashboardPage() {
                 disabled={dashboardData?.hasConnectedAccounts}
               >
                 <Plus className="mr-2 h-4 w-4" />
-                {dashboardData?.hasConnectedAccounts ? 'Account Connected' : 'Connect Bancolombia'}
+                {dashboardData?.hasConnectedAccounts ? 
+                  (locale === 'es' ? 'Cuenta Conectada' : 'Account Connected') : 
+                  (locale === 'es' ? 'Conectar Bancolombia' : 'Connect Bancolombia')
+                }
               </Button>
             </div>
           </CardContent>

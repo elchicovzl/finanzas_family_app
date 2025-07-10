@@ -135,14 +135,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }
     })
 
-    // Send email invitation
+    // Send email invitation with locale detection
+    // For now, we'll use Spanish as default since the app is primarily for Colombian users
+    // In the future, this could be determined by user preferences or browser locale
     try {
       await sendInvitationEmail({
         to: invitation.email,
         familyName: invitation.family.name,
         invitedByName: invitation.invitedBy.name || invitation.invitedBy.email,
         invitationUrl: `${process.env.NEXTAUTH_URL}/invite/${token}`,
-        expiresAt: invitation.expiresAt
+        expiresAt: invitation.expiresAt,
+        locale: 'es' // Default to Spanish for Colombian users
       })
     } catch (emailError) {
       console.error('Failed to send invitation email:', emailError)

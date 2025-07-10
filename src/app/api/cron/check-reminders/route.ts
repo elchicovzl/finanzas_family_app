@@ -112,6 +112,8 @@ export async function GET(request: NextRequest) {
         console.log(`   Family members: ${reminder.family.members.length}`)
 
         // Send email to all active family members
+        // For now, we'll use Spanish as default since the app is primarily for Colombian users
+        // In the future, this could be determined by user preferences
         for (const member of reminder.family.members) {
           try {
             await sendReminderEmail({
@@ -124,7 +126,8 @@ export async function GET(request: NextRequest) {
               daysUntilDue,
               priority: reminder.priority as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT',
               isRecurring: reminder.isRecurring,
-              category: reminder.category || undefined
+              category: reminder.category || undefined,
+              locale: 'es' // Default to Spanish for Colombian users
             })
 
             emailsSent++
