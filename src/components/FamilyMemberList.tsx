@@ -239,7 +239,7 @@ export function FamilyMemberList() {
         <CardContent>
           <div className="space-y-4">
             {members.map((member) => (
-              <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={member.id} className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0 p-4 border rounded-lg">
                 <div className="flex items-center space-x-4">
                   <Avatar>
                     <AvatarImage src={member.user.image || undefined} />
@@ -247,8 +247,8 @@ export function FamilyMemberList() {
                       {getInitials(member.user.name, member.user.email)}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="space-y-1">
-                    <div className="flex items-center space-x-2">
+                  <div className="space-y-1 flex-1">
+                    <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-2">
                       <span className="font-medium">
                         {member.user.name || member.user.email}
                       </span>
@@ -259,7 +259,7 @@ export function FamilyMemberList() {
                         </span>
                       </Badge>
                     </div>
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                    <div className="flex flex-col space-y-1 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4 text-sm text-muted-foreground">
                       <div className="flex items-center space-x-1">
                         <Mail className="h-3 w-3" />
                         <span>{member.user.email}</span>
@@ -272,13 +272,14 @@ export function FamilyMemberList() {
                   </div>
                 </div>
 
-                {canManageMembers && member.role !== 'ADMIN' && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
+                <div className="flex items-center justify-end sm:justify-start">
+                  {canManageMembers && member.role !== 'ADMIN' && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => updateMemberRole(member.id, 'ADMIN')}>
                         <Crown className="mr-2 h-4 w-4 text-amber-600" />
@@ -318,15 +319,16 @@ export function FamilyMemberList() {
                         </AlertDialogContent>
                       </AlertDialog>
                     </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
+                    </DropdownMenu>
+                  )}
 
-                {member.role === 'ADMIN' && (
-                  <Badge variant="outline" className="text-amber-600 border-amber-200">
-                    <Shield className="mr-1 h-3 w-3" />
-                    {t('family.adminBadge')}
-                  </Badge>
-                )}
+                  {member.role === 'ADMIN' && (
+                    <Badge variant="outline" className="text-amber-600 border-amber-200">
+                      <Shield className="mr-1 h-3 w-3" />
+                      {t('family.adminBadge')}
+                    </Badge>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -349,9 +351,9 @@ export function FamilyMemberList() {
           <CardContent>
             <div className="space-y-4">
               {invitations.map((invitation) => (
-                <div key={invitation.id} className="flex items-center justify-between p-4 border rounded-lg bg-yellow-50 border-yellow-200">
-                  <div className="space-y-1">
-                    <div className="flex items-center space-x-2">
+                <div key={invitation.id} className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0 p-4 border rounded-lg bg-yellow-50 border-yellow-200">
+                  <div className="space-y-1 flex-1">
+                    <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-2">
                       <span className="font-medium">{invitation.email}</span>
                       <Badge className={getRoleColor(invitation.role)} variant="secondary">
                         <span className="flex items-center space-x-1">
@@ -360,20 +362,21 @@ export function FamilyMemberList() {
                         </span>
                       </Badge>
                     </div>
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                    <div className="flex flex-col space-y-1 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4 text-sm text-muted-foreground">
                       <span>{t('family.invitedBy')} {invitation.invitedBy.name || invitation.invitedBy.email}</span>
-                      <span>•</span>
+                      <span className="hidden sm:inline">•</span>
                       <span>{t('family.expires')} {new Date(invitation.expiresAt).toLocaleDateString()}</span>
                     </div>
                   </div>
 
-                  {canManageMembers && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
-                          {t('family.cancel')}
-                        </Button>
-                      </AlertDialogTrigger>
+                  <div className="flex items-center justify-end sm:justify-start">
+                    {canManageMembers && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+                            {t('family.cancel')}
+                          </Button>
+                        </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
                           <AlertDialogTitle>{t('family.cancelInvitationTitle')}</AlertDialogTitle>
@@ -392,7 +395,8 @@ export function FamilyMemberList() {
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
-                  )}
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

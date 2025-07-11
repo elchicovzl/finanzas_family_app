@@ -143,8 +143,8 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
+        <div className="flex-1">
           <h2 className="text-3xl font-bold tracking-tight">{t('transactions.title')}</h2>
           <p className="text-muted-foreground">
             {currentFamily ? `${t('transactions.descriptionFamily')} ${currentFamily.name}` : t('transactions.description')}

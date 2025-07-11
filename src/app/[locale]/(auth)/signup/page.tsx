@@ -3,11 +3,13 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { useTranslations } from '@/hooks/use-translations'
 
 function SignUpForm() {
   const [name, setName] = useState('')
@@ -18,6 +20,7 @@ function SignUpForm() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { t } = useTranslations()
   
   const callbackUrl = searchParams.get('callbackUrl')
   const inviteEmail = searchParams.get('email')
@@ -34,7 +37,7 @@ function SignUpForm() {
     setError('')
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
+      setError(t('auth.signup.passwordMismatch'))
       setLoading(false)
       return
     }
@@ -58,7 +61,7 @@ function SignUpForm() {
         setError(data.error || 'An error occurred')
       }
     } catch (error) {
-      setError('An error occurred. Please try again.')
+      setError(t('auth.signup.error'))
     } finally {
       setLoading(false)
     }
@@ -67,11 +70,22 @@ function SignUpForm() {
   return (
     <Card>
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl text-center">Create account</CardTitle>
+        <div className="flex justify-center mb-4">
+          <Link href="/">
+            <Image
+              src="/logo.png"
+              alt="FamFinz Logo"
+              width={120}
+              height={40}
+              className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity"
+            />
+          </Link>
+        </div>
+        <CardTitle className="text-2xl text-center">{t('auth.signup.title')}</CardTitle>
         <CardDescription className="text-center">
           {inviteEmail 
-            ? `Create your account to accept the family invitation sent to ${inviteEmail}`
-            : 'Enter your information to create your account'
+            ? t('auth.signup.inviteDescription', { email: inviteEmail })
+            : t('auth.signup.description')
           }
         </CardDescription>
       </CardHeader>
@@ -83,22 +97,22 @@ function SignUpForm() {
             </Alert>
           )}
           <div className="space-y-2">
-            <Label htmlFor="name">Full Name</Label>
+            <Label htmlFor="name">{t('auth.signup.fullName')}</Label>
             <Input
               id="name"
               type="text"
-              placeholder="John Doe"
+              placeholder={t('auth.signup.fullNamePlaceholder')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('auth.signup.email')}</Label>
             <Input
               id="email"
               type="email"
-              placeholder="m@example.com"
+              placeholder={t('auth.signup.emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -106,7 +120,7 @@ function SignUpForm() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t('auth.signup.password')}</Label>
             <Input
               id="password"
               type="password"
@@ -116,7 +130,7 @@ function SignUpForm() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Label htmlFor="confirmPassword">{t('auth.signup.confirmPassword')}</Label>
             <Input
               id="confirmPassword"
               type="password"
@@ -128,12 +142,12 @@ function SignUpForm() {
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Creating account...' : 'Create account'}
+            {loading ? t('auth.signup.creatingAccount') : t('auth.signup.createButton')}
           </Button>
           <div className="text-sm text-center">
-            Already have an account?{' '}
+            {t('auth.signup.hasAccount')}{' '}
             <Link href="/signin" className="text-blue-600 hover:underline">
-              Sign in
+              {t('auth.signup.signIn')}
             </Link>
           </div>
         </CardFooter>

@@ -3,11 +3,11 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import { MainNav } from '@/components/layout/main-nav'
-import { UserNav } from '@/components/layout/user-nav'
 import { FamilySelector } from '@/components/FamilySelector'
 import { LanguageSwitcher } from '@/components/language-switcher'
+import { AppSidebar } from '@/components/layout/app-sidebar'
 import { useFamilyStore } from '@/stores/family-store'
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -46,23 +46,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="flex h-16 items-center px-4">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-xl font-bold">Finanzas App</h1>
-            <MainNav className="mx-6" />
-          </div>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger className="-ml-1" />
           <div className="ml-auto flex items-center space-x-4">
             <FamilySelector />
             <LanguageSwitcher />
-            <UserNav />
           </div>
-        </div>
-      </header>
-      <main className="flex-1 space-y-4 p-8 pt-6">
-        {children}
-      </main>
-    </div>
+        </header>
+        <main className="flex flex-1 flex-col gap-4 p-4">
+          {children}
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }
