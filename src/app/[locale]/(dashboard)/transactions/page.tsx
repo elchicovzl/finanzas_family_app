@@ -17,6 +17,7 @@ import {
 import { Search, Download, User } from 'lucide-react'
 import AddTransactionModal from '@/components/AddTransactionModal'
 import { useFamilyStore } from '@/stores/family-store'
+import { useTranslations } from '@/hooks/use-translations'
 
 interface Transaction {
   id: string
@@ -55,6 +56,7 @@ interface TransactionResponse {
 
 export default function TransactionsPage() {
   const { currentFamily } = useFamilyStore()
+  const { t, locale } = useTranslations()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -93,6 +95,15 @@ export default function TransactionsPage() {
     fetchTransactions()
   }, [currentPage, search, typeFilter, categoryFilter])
 
+  const formatCurrency = (amount: number) => {
+    const localeCode = locale === 'es' ? 'es-CO' : 'en-US'
+    return new Intl.NumberFormat(localeCode, {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0
+    }).format(amount)
+  }
+
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'INCOME':
@@ -103,6 +114,19 @@ export default function TransactionsPage() {
         return 'bg-blue-100 text-blue-800'
       default:
         return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'INCOME':
+        return t('transactions.income')
+      case 'EXPENSE':
+        return t('transactions.expense')
+      case 'TRANSFER':
+        return t('transactions.transfer')
+      default:
+        return type
     }
   }
 
@@ -121,15 +145,15 @@ export default function TransactionsPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Transactions</h2>
+          <h2 className="text-3xl font-bold tracking-tight">{t('transactions.title')}</h2>
           <p className="text-muted-foreground">
-            {currentFamily ? `Manage and track all transactions for ${currentFamily.name}` : 'Manage and track all your financial transactions'}
+            {currentFamily ? `${t('transactions.descriptionFamily')} ${currentFamily.name}` : t('transactions.description')}
           </p>
         </div>
         <div className="flex items-center space-x-2">
           <Button variant="outline">
             <Download className="mr-2 h-4 w-4" />
-            Export
+            {t('common.export')}
           </Button>
           <AddTransactionModal onTransactionAdded={fetchTransactions} />
         </div>
@@ -137,9 +161,9 @@ export default function TransactionsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Filters</CardTitle>
+          <CardTitle>{t('transactions.filters')}</CardTitle>
           <CardDescription>
-            Filter and search your transactions
+            {t('transactions.filtersDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -148,7 +172,7 @@ export default function TransactionsPage() {
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search transactions..."
+                  placeholder={t('transactions.searchTransactions')}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-8"
@@ -157,25 +181,25 @@ export default function TransactionsPage() {
             </div>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by type" />
+                <SelectValue placeholder={t('transactions.filterByType')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="INCOME">Income</SelectItem>
-                <SelectItem value="EXPENSE">Expense</SelectItem>
-                <SelectItem value="TRANSFER">Transfer</SelectItem>
+                <SelectItem value="all">{t('transactions.allTypes')}</SelectItem>
+                <SelectItem value="INCOME">{t('transactions.income')}</SelectItem>
+                <SelectItem value="EXPENSE">{t('transactions.expense')}</SelectItem>
+                <SelectItem value="TRANSFER">{t('transactions.transfer')}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by category" />
+                <SelectValue placeholder={t('transactions.filterByCategory')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="food">Food & Dining</SelectItem>
-                <SelectItem value="transport">Transportation</SelectItem>
-                <SelectItem value="entertainment">Entertainment</SelectItem>
-                <SelectItem value="utilities">Utilities</SelectItem>
+                <SelectItem value="all">{t('transactions.allCategories')}</SelectItem>
+                <SelectItem value="food">{t('transactions.foodDining')}</SelectItem>
+                <SelectItem value="transport">{t('transactions.transportation')}</SelectItem>
+                <SelectItem value="entertainment">{t('transactions.entertainment')}</SelectItem>
+                <SelectItem value="utilities">{t('transactions.utilities')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -184,9 +208,9 @@ export default function TransactionsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Transaction History</CardTitle>
+          <CardTitle>{t('transactions.transactionHistory')}</CardTitle>
           <CardDescription>
-            A complete list of all your transactions
+            {t('transactions.transactionHistoryDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -199,13 +223,13 @@ export default function TransactionsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Account</TableHead>
-                    <TableHead>Added By</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>{t('common.date')}</TableHead>
+                    <TableHead>{t('common.description')}</TableHead>
+                    <TableHead>{t('common.category')}</TableHead>
+                    <TableHead>{t('transactions.account')}</TableHead>
+                    <TableHead>{t('transactions.addedBy')}</TableHead>
+                    <TableHead>{t('transactions.type')}</TableHead>
+                    <TableHead className="text-right">{t('common.amount')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -222,7 +246,7 @@ export default function TransactionsPage() {
                             <span>{transaction.category.name}</span>
                           </div>
                         ) : (
-                          <span className="text-muted-foreground">Uncategorized</span>
+                          <span className="text-muted-foreground">{t('transactions.uncategorized')}</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -250,11 +274,11 @@ export default function TransactionsPage() {
                       </TableCell>
                       <TableCell>
                         <Badge className={getTypeColor(transaction.type)}>
-                          {transaction.type}
+                          {getTypeLabel(transaction.type)}
                         </Badge>
                       </TableCell>
                       <TableCell className={`text-right font-medium ${getAmountColor(transaction.type)}`}>
-                        {transaction.formattedAmount}
+                        {formatCurrency(transaction.amount)}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -263,7 +287,7 @@ export default function TransactionsPage() {
 
               {transactions.length === 0 && (
                 <div className="text-center py-8">
-                  <p className="text-muted-foreground">No transactions found</p>
+                  <p className="text-muted-foreground">{t('transactions.noTransactions')}</p>
                 </div>
               )}
 
@@ -274,17 +298,17 @@ export default function TransactionsPage() {
                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
                   >
-                    Previous
+                    {t('common.previous')}
                   </Button>
                   <span className="text-sm text-muted-foreground">
-                    Page {currentPage} of {totalPages}
+                    {t('transactions.pageOf', { page: currentPage, total: totalPages })}
                   </span>
                   <Button
                     variant="outline"
                     onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
                   >
-                    Next
+                    {t('common.next')}
                   </Button>
                 </div>
               )}

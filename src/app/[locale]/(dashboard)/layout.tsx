@@ -6,6 +6,7 @@ import { useEffect } from 'react'
 import { MainNav } from '@/components/layout/main-nav'
 import { UserNav } from '@/components/layout/user-nav'
 import { FamilySelector } from '@/components/FamilySelector'
+import { LanguageSwitcher } from '@/components/language-switcher'
 import { useFamilyStore } from '@/stores/family-store'
 
 interface DashboardLayoutProps {
@@ -54,6 +55,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
           <div className="ml-auto flex items-center space-x-4">
             <FamilySelector />
+            <LanguageSwitcher />
             <UserNav />
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useFamilyStore } from '@/stores/family-store'
+import { useTranslations } from '@/hooks/use-translations'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -63,6 +64,7 @@ interface FamilyInvitation {
 
 export function FamilyMemberList() {
   const { currentFamily, refreshFamilies } = useFamilyStore()
+  const { t } = useTranslations()
   const [members, setMembers] = useState<FamilyMember[]>([])
   const [invitations, setInvitations] = useState<FamilyInvitation[]>([])
   const [loading, setLoading] = useState(true)
@@ -79,11 +81,11 @@ export function FamilyMemberList() {
       }
     } catch (error) {
       console.error('Error fetching members:', error)
-      toast.error('Failed to load family members')
+      toast.error(t('family.failedToLoadMembers'))
     } finally {
       setLoading(false)
     }
-  }, [currentFamily])
+  }, [currentFamily, t])
 
   useEffect(() => {
     if (currentFamily) {
@@ -100,16 +102,16 @@ export function FamilyMemberList() {
       })
 
       if (response.ok) {
-        toast.success('Member removed from family')
+        toast.success(t('family.memberRemovedSuccess'))
         await fetchMembers()
         await refreshFamilies()
       } else {
         const error = await response.json()
-        toast.error(error.error || 'Failed to remove member')
+        toast.error(error.error || t('family.failedToRemoveMember'))
       }
     } catch (error) {
       console.error('Error removing member:', error)
-      toast.error('Failed to remove member')
+      toast.error(t('family.failedToRemoveMember'))
     }
   }
 
@@ -126,16 +128,16 @@ export function FamilyMemberList() {
       })
 
       if (response.ok) {
-        toast.success('Member role updated')
+        toast.success(t('family.memberRoleUpdated'))
         await fetchMembers()
         await refreshFamilies()
       } else {
         const error = await response.json()
-        toast.error(error.error || 'Failed to update member role')
+        toast.error(error.error || t('family.failedToUpdateRole'))
       }
     } catch (error) {
       console.error('Error updating member role:', error)
-      toast.error('Failed to update member role')
+      toast.error(t('family.failedToUpdateRole'))
     }
   }
 
@@ -148,15 +150,15 @@ export function FamilyMemberList() {
       })
 
       if (response.ok) {
-        toast.success('Invitation cancelled')
+        toast.success(t('family.invitationCancelled'))
         await fetchMembers()
       } else {
         const error = await response.json()
-        toast.error(error.error || 'Failed to cancel invitation')
+        toast.error(error.error || t('family.failedToCancelInvitation'))
       }
     } catch (error) {
       console.error('Error cancelling invitation:', error)
-      toast.error('Failed to cancel invitation')
+      toast.error(t('family.failedToCancelInvitation'))
     }
   }
 
@@ -202,8 +204,8 @@ export function FamilyMemberList() {
         <CardContent className="flex items-center justify-center py-12">
           <div className="text-center">
             <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Family Selected</h3>
-            <p className="text-muted-foreground">Select a family to view members</p>
+            <h3 className="text-lg font-semibold mb-2">{t('family.noFamilySelected')}</h3>
+            <p className="text-muted-foreground">{t('family.noFamilySelectedDesc')}</p>
           </div>
         </CardContent>
       </Card>
@@ -227,11 +229,11 @@ export function FamilyMemberList() {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Users className="h-5 w-5" />
-            <span>Family Members</span>
+            <span>{t('family.familyMembers')}</span>
             <Badge variant="outline">{members.length}</Badge>
           </CardTitle>
           <CardDescription>
-            Manage {currentFamily.name} members and their permissions
+            {t('family.manageMembers', { familyName: currentFamily.name })}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -253,7 +255,7 @@ export function FamilyMemberList() {
                       <Badge className={getRoleColor(member.role)} variant="secondary">
                         <span className="flex items-center space-x-1">
                           {getRoleIcon(member.role)}
-                          <span className="text-xs">{member.role}</span>
+                          <span className="text-xs">{t(`family.${member.role}`)}</span>
                         </span>
                       </Badge>
                     </div>
@@ -264,7 +266,7 @@ export function FamilyMemberList() {
                       </div>
                       <div className="flex items-center space-x-1">
                         <Calendar className="h-3 w-3" />
-                        <span>Joined {new Date(member.joinedAt).toLocaleDateString()}</span>
+                        <span>{t('family.joined')} {new Date(member.joinedAt).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>
@@ -280,38 +282,37 @@ export function FamilyMemberList() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => updateMemberRole(member.id, 'ADMIN')}>
                         <Crown className="mr-2 h-4 w-4 text-amber-600" />
-                        Make Admin
+                        {t('family.makeAdmin')}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => updateMemberRole(member.id, 'MEMBER')}>
                         <User className="mr-2 h-4 w-4 text-blue-600" />
-                        Make Member
+                        {t('family.makeMember')}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => updateMemberRole(member.id, 'VIEWER')}>
                         <Eye className="mr-2 h-4 w-4 text-gray-600" />
-                        Make Viewer
+                        {t('family.makeViewer')}
                       </DropdownMenuItem>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                             <UserMinus className="mr-2 h-4 w-4 text-red-600" />
-                            Remove Member
+                            {t('family.removeMember')}
                           </DropdownMenuItem>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Remove Family Member</AlertDialogTitle>
+                            <AlertDialogTitle>{t('family.removeMemberTitle')}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to remove {member.user.name || member.user.email} from the family? 
-                              This action cannot be undone and they will lose access to all family financial data.
+                              {t('family.removeMemberDesc', { memberName: member.user.name || member.user.email })}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                             <AlertDialogAction 
                               onClick={() => removeMember(member.id)}
                               className="bg-red-600 hover:bg-red-700"
                             >
-                              Remove Member
+                              {t('family.removeMember')}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -323,7 +324,7 @@ export function FamilyMemberList() {
                 {member.role === 'ADMIN' && (
                   <Badge variant="outline" className="text-amber-600 border-amber-200">
                     <Shield className="mr-1 h-3 w-3" />
-                    Admin
+                    {t('family.adminBadge')}
                   </Badge>
                 )}
               </div>
@@ -338,11 +339,11 @@ export function FamilyMemberList() {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Mail className="h-5 w-5" />
-              <span>Pending Invitations</span>
+              <span>{t('family.pendingInvitations')}</span>
               <Badge variant="outline">{invitations.length}</Badge>
             </CardTitle>
             <CardDescription>
-              Invitations that haven&apos;t been accepted yet
+              {t('family.invitationsNotAccepted')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -355,14 +356,14 @@ export function FamilyMemberList() {
                       <Badge className={getRoleColor(invitation.role)} variant="secondary">
                         <span className="flex items-center space-x-1">
                           {getRoleIcon(invitation.role)}
-                          <span className="text-xs">{invitation.role}</span>
+                          <span className="text-xs">{t(`family.${invitation.role}`)}</span>
                         </span>
                       </Badge>
                     </div>
                     <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                      <span>Invited by {invitation.invitedBy.name || invitation.invitedBy.email}</span>
+                      <span>{t('family.invitedBy')} {invitation.invitedBy.name || invitation.invitedBy.email}</span>
                       <span>•</span>
-                      <span>Expires {new Date(invitation.expiresAt).toLocaleDateString()}</span>
+                      <span>{t('family.expires')} {new Date(invitation.expiresAt).toLocaleDateString()}</span>
                     </div>
                   </div>
 
@@ -370,24 +371,23 @@ export function FamilyMemberList() {
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
-                          Cancel
+                          {t('family.cancel')}
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Cancel Invitation</AlertDialogTitle>
+                          <AlertDialogTitle>{t('family.cancelInvitationTitle')}</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Are you sure you want to cancel the invitation for {invitation.email}? 
-                            They will not be able to join the family using this invitation.
+                            {t('family.cancelInvitationDesc', { email: invitation.email })}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Keep Invitation</AlertDialogCancel>
+                          <AlertDialogCancel>{t('family.keepInvitation')}</AlertDialogCancel>
                           <AlertDialogAction 
                             onClick={() => cancelInvitation(invitation.id)}
                             className="bg-red-600 hover:bg-red-700"
                           >
-                            Cancel Invitation
+                            {t('family.cancelInvitationAction')}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>

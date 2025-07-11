@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Calendar, momentLocalizer } from 'react-big-calendar'
 import moment from 'moment'
 import 'moment/locale/es'
+import 'moment/locale/en-gb'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -12,9 +13,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Plus, Calendar as CalendarIcon, List, CheckCircle, Clock, AlertTriangle, RefreshCw, Edit, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import ReminderModal from '@/components/ReminderModal'
+import { useTranslations } from '@/hooks/use-translations'
 
-// Set moment locale to Spanish
-moment.locale('es')
+// Set moment locale dynamically
 const localizer = momentLocalizer(moment)
 
 interface CalendarEvent {
@@ -64,6 +65,7 @@ interface Reminder {
 }
 
 export default function RemindersPage() {
+  const { locale, t } = useTranslations()
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [reminders, setReminders] = useState<Reminder[]>([])
   const [loading, setLoading] = useState(true)
@@ -80,10 +82,22 @@ export default function RemindersPage() {
     recurring: 0
   })
 
+  const formatCurrency = (amount: number) => {
+    const localeCode = locale === 'es' ? 'es-CO' : 'en-US'
+    return new Intl.NumberFormat(localeCode, {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0
+    }).format(amount)
+  }
+
   useEffect(() => {
+    // Set moment locale based on current locale
+    const momentLocale = locale === 'es' ? 'es' : 'en-gb'
+    moment.locale(momentLocale)
     fetchReminders()
     fetchCalendarEvents()
-  }, [])
+  }, [locale])
 
   const fetchReminders = async () => {
     try {
@@ -94,7 +108,7 @@ export default function RemindersPage() {
       }
     } catch (error) {
       console.error('Error fetching reminders:', error)
-      toast.error('Error al cargar recordatorios')
+      toast.error(t('messages.errorLoadingReminders'))
     }
   }
 
@@ -113,7 +127,7 @@ export default function RemindersPage() {
       }
     } catch (error) {
       console.error('Error fetching calendar events:', error)
-      toast.error('Error al cargar calendario')
+      toast.error(t('messages.errorLoadingCalendar'))
     } finally {
       setLoading(false)
     }
@@ -130,15 +144,15 @@ export default function RemindersPage() {
       })
 
       if (response.ok) {
-        toast.success('Recordatorio marcado como completado')
+        toast.success(t('messages.reminderMarkedCompleted'))
         fetchReminders()
         fetchCalendarEvents()
       } else {
-        toast.error('Error al completar recordatorio')
+        toast.error(t('messages.errorCompletingReminder'))
       }
     } catch (error) {
       console.error('Error marking reminder as completed:', error)
-      toast.error('Error al completar recordatorio')
+      toast.error(t('messages.errorCompletingReminder'))
     }
   }
 
@@ -148,7 +162,7 @@ export default function RemindersPage() {
   }
 
   const handleDeleteReminder = async (reminderId: string) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este recordatorio?')) {
+    if (!confirm(t('reminders.confirmDeleteReminder'))) {
       return
     }
 
@@ -158,15 +172,15 @@ export default function RemindersPage() {
       })
 
       if (response.ok) {
-        toast.success('Recordatorio eliminado')
+        toast.success(t('messages.reminderDeleted'))
         fetchReminders()
         fetchCalendarEvents()
       } else {
-        toast.error('Error al eliminar recordatorio')
+        toast.error(t('messages.errorDeletingReminder'))
       }
     } catch (error) {
       console.error('Error deleting reminder:', error)
-      toast.error('Error al eliminar recordatorio')
+      toast.error(t('messages.errorDeletingReminder'))
     }
   }
 
@@ -206,7 +220,7 @@ export default function RemindersPage() {
     today.setHours(0, 0, 0, 0)
     
     if (start < today) {
-      toast.error('No se pueden crear recordatorios para fechas pasadas')
+      toast.error(t('reminders.cannotCreatePastReminders'))
       return
     }
     
@@ -223,6 +237,16 @@ export default function RemindersPage() {
       case 'HIGH': return 'bg-orange-100 text-orange-800'
       case 'URGENT': return 'bg-red-100 text-red-800'
       default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getPriorityLabel = (priority: string) => {
+    switch (priority) {
+      case 'LOW': return t('reminders.priorityLow')
+      case 'MEDIUM': return t('reminders.priorityMedium')
+      case 'HIGH': return t('reminders.priorityHigh')
+      case 'URGENT': return t('reminders.priorityUrgent')
+      default: return priority
     }
   }
 
@@ -266,14 +290,14 @@ export default function RemindersPage() {
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Recordatorios</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('reminders.title')}</h1>
           <p className="text-muted-foreground">
-            Gestiona tus recordatorios de pagos y visualízalos en el calendario
+            {t('reminders.description')}
           </p>
         </div>
         <Button onClick={handleNewReminder}>
           <Plus className="w-4 h-4 mr-2" />
-          Nuevo Recordatorio
+          {t('reminders.newReminder')}
         </Button>
       </div>
 
@@ -281,7 +305,7 @@ export default function RemindersPage() {
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('reminders.total')}</CardTitle>
             <List className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -291,7 +315,7 @@ export default function RemindersPage() {
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completados</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('reminders.completed')}</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
@@ -301,7 +325,7 @@ export default function RemindersPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pendientes</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('reminders.pending')}</CardTitle>
             <Clock className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
@@ -311,7 +335,7 @@ export default function RemindersPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Notificados</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('reminders.notified')}</CardTitle>
             <AlertTriangle className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
@@ -321,7 +345,7 @@ export default function RemindersPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Recurrentes</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('reminders.recurring')}</CardTitle>
             <RefreshCw className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
@@ -334,20 +358,20 @@ export default function RemindersPage() {
         <TabsList>
           <TabsTrigger value="calendar">
             <CalendarIcon className="w-4 h-4 mr-2" />
-            Calendario
+            {t('reminders.calendar')}
           </TabsTrigger>
           <TabsTrigger value="list">
             <List className="w-4 h-4 mr-2" />
-            Lista
+            {t('reminders.list')}
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="calendar" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Vista de Calendario</CardTitle>
+              <CardTitle>{t('reminders.calendarView')}</CardTitle>
               <CardDescription>
-                Visualiza todos tus recordatorios en el calendario
+                {t('reminders.visualizeReminders')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -368,22 +392,22 @@ export default function RemindersPage() {
                   eventPropGetter={eventStyleGetter}
                   popup={true}
                   messages={{
-                    next: 'Siguiente',
-                    previous: 'Anterior',
-                    today: 'Hoy',
-                    month: 'Mes',
-                    week: 'Semana',
-                    day: 'Día',
-                    agenda: 'Agenda',
-                    date: 'Fecha',
-                    time: 'Hora',
-                    event: 'Evento',
-                    allDay: 'Todo el día',
-                    work_week: 'Semana laboral',
-                    yesterday: 'Ayer',
-                    tomorrow: 'Mañana',
-                    noEventsInRange: 'No hay recordatorios en este rango de fechas.',
-                    showMore: (total) => `+ Ver ${total} más`
+                    next: t('reminders.next'),
+                    previous: t('reminders.previous'),
+                    today: t('reminders.today'),
+                    month: t('reminders.month'),
+                    week: t('reminders.week'),
+                    day: t('reminders.day'),
+                    agenda: t('reminders.agenda'),
+                    date: t('reminders.date'),
+                    time: t('reminders.time'),
+                    event: t('reminders.event'),
+                    allDay: t('reminders.allDay'),
+                    work_week: t('reminders.workWeek'),
+                    yesterday: t('reminders.yesterday'),
+                    tomorrow: t('reminders.tomorrow'),
+                    noEventsInRange: t('reminders.noEventsInRange'),
+                    showMore: (total) => t('reminders.showMore', { count: total })
                   }}
                   formats={{
                     monthHeaderFormat: 'MMMM YYYY',
@@ -403,7 +427,7 @@ export default function RemindersPage() {
                     agendaTimeRangeFormat: ({ start, end }) =>
                       `${moment(start).format('HH:mm')} - ${moment(end).format('HH:mm')}`
                   }}
-                  culture="es"
+                  culture={locale === 'es' ? 'es' : 'en-GB'}
                 />
               </div>
             </CardContent>
@@ -413,16 +437,16 @@ export default function RemindersPage() {
         <TabsContent value="list" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Lista de Recordatorios</CardTitle>
+              <CardTitle>{t('reminders.listView')}</CardTitle>
               <CardDescription>
-                Lista de todos los recordatorios próximos y vencidos
+                {t('reminders.upcomingOverdueReminders')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {reminders.length === 0 ? (
                   <p className="text-center text-muted-foreground py-8">
-                    No hay recordatorios próximos
+                    {t('reminders.noUpcomingReminders')}
                   </p>
                 ) : (
                   reminders.map((reminder) => (
@@ -439,12 +463,12 @@ export default function RemindersPage() {
                           <div className="flex items-center gap-2 mb-2">
                             <h3 className="font-semibold">{reminder.title}</h3>
                             <Badge className={getPriorityColor(reminder.priority)}>
-                              {reminder.priority}
+                              {getPriorityLabel(reminder.priority)}
                             </Badge>
                             {reminder.isRecurring && (
                               <Badge variant="outline">
                                 <RefreshCw className="w-3 h-3 mr-1" />
-                                Recurrente
+                                {t('reminders.recurring')}
                               </Badge>
                             )}
                           </div>
@@ -457,8 +481,8 @@ export default function RemindersPage() {
 
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <span>📅 {reminder.formattedDueDate}</span>
-                            {reminder.formattedAmount && (
-                              <span>💰 {reminder.formattedAmount}</span>
+                            {reminder.amount && (
+                              <span>💰 {formatCurrency(reminder.amount)}</span>
                             )}
                             {reminder.category && (
                               <span>
@@ -471,12 +495,12 @@ export default function RemindersPage() {
                               'text-blue-600'
                             }>
                               {reminder.isNotified 
-                                ? `Notificado hace ${Math.abs(reminder.daysUntilDue)} días`
+                                ? t('reminders.notifiedDaysAgo', { days: Math.abs(reminder.daysUntilDue) })
                                 : reminder.daysUntilDue === 0
-                                ? 'Vence hoy'
+                                ? t('reminders.dueToday')
                                 : reminder.daysUntilDue === 1
-                                ? 'Vence mañana'
-                                : `Vence en ${reminder.daysUntilDue} días`
+                                ? t('reminders.dueTomorrow')
+                                : t('reminders.dueInDays', { days: reminder.daysUntilDue })
                               }
                             </span>
                           </div>
@@ -503,7 +527,7 @@ export default function RemindersPage() {
                             disabled={reminder.isCompleted}
                           >
                             <CheckCircle className="w-4 h-4 mr-1" />
-                            Completar
+                            {t('reminders.complete')}
                           </Button>
                         </div>
                       </div>

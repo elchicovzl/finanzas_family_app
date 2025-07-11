@@ -59,8 +59,10 @@ User (1) → (n) BudgetTemplate → (1) Category
 User (1) → (n) Family [as admin/member/viewer]
 Family (1) → (n) FamilyMember → (1) User
 Family (1) → (n) FamilyInvitation [pending invitations]
+Family (1) → (n) Reminder → (1) User [createdBy]
 BudgetTemplate (1) → (n) Budget [generated budgets]
 Transaction (n) → (1) Category [optional]
+Reminder (n) → (1) Category [optional]
 ```
 
 ### API Architecture
@@ -95,8 +97,15 @@ Transaction (n) → (1) Category [optional]
 - `/api/families/invitations/accept`: Accept family invitation
 - `/api/migration/family-setup`: Migrate existing users to family system
 
+#### Reminders System Endpoints
+- `/api/reminders`: Reminder CRUD operations with pagination and filtering
+- `/api/reminders/[reminderId]`: Individual reminder operations (get, update, delete)
+- `/api/reminders/calendar`: Calendar-formatted reminder data for react-big-calendar
+- `/api/cron/check-reminders`: Automated reminder notification processing
+
 #### Automation Endpoints
 - `/api/cron/generate-monthly-budgets`: Vercel cron job for automatic budget generation (1st of each month)
+- `/api/cron/check-reminders`: Daily reminder notification and completion processing
 
 ### UI/UX Architecture
 
@@ -187,6 +196,38 @@ The application implements a comprehensive family financial management system:
 - **Complete user flow**: Supports both existing users and new user registration
 - **Auto-acceptance**: New users automatically join family after registration
 
+### Reminders System
+The application implements a comprehensive reminders system for financial obligations and payment notifications:
+
+#### Reminder Management
+- **Payment reminders**: Create reminders for bills, debts, and financial obligations
+- **Recurring reminders**: Support for daily, weekly, monthly, quarterly, and yearly recurrence
+- **Email notifications**: Automated email alerts sent to all family members
+- **Calendar integration**: Visual calendar interface using react-big-calendar
+- **Priority levels**: LOW, MEDIUM, HIGH, URGENT priority classification
+- **Category assignment**: Optional linking to expense categories
+- **Amount tracking**: Optional monetary amount with Colombian Peso formatting
+
+#### Notification System
+- **Proactive notifications**: Configurable advance notification (1-30 days before due date)
+- **Automated processing**: Daily cron job checks for reminders needing notification
+- **Smart completion**: Non-recurring reminders automatically marked as completed after notification
+- **Recurring logic**: Recurring reminders generate next occurrence when manually completed
+- **Email templates**: Professional HTML emails with responsive design and Spanish localization
+
+#### Reminder Types and Recurrence
+- **One-time reminders**: Single occurrence reminders that auto-complete after notification
+- **Recurring reminders**: Continuous reminders that generate future occurrences
+- **Recurrence patterns**: DAILY, WEEKLY, MONTHLY, QUARTERLY, YEARLY with custom intervals
+- **End date support**: Optional recurrence end dates for finite recurring series
+- **Smart date handling**: Proper handling of edge cases (e.g., Feb 30 → Feb 28/29)
+
+#### Family Integration
+- **Family-scoped data**: All reminders belong to specific families
+- **Role-based permissions**: ADMIN (full access), MEMBER (create/edit), VIEWER (read-only)
+- **Family notifications**: Email alerts sent to all active family members
+- **Access control**: Full integration with existing family permission system
+
 ### Budget System
 The application implements a comprehensive budget management system with recurring capabilities:
 
@@ -244,6 +285,10 @@ The application implements a comprehensive budget management system with recurri
     {
       "path": "/api/cron/generate-monthly-budgets",
       "schedule": "0 0 1 * *"
+    },
+    {
+      "path": "/api/cron/check-reminders",
+      "schedule": "0 9 * * *"
     }
   ]
 }
@@ -257,6 +302,8 @@ The application implements a comprehensive budget management system with recurri
 1. Check Vercel Functions tab for cron job registration
 2. Monitor `/api/cron/generate-monthly-budgets` logs for execution
 3. Verify budget template auto-generation on 1st of month
+4. Monitor `/api/cron/check-reminders` logs for daily reminder processing
+5. Test reminder email notifications and verify delivery
 
 ## Current Implementation Status
 
@@ -273,6 +320,11 @@ The application implements a comprehensive budget management system with recurri
 - ✅ Email invitation system with complete user onboarding flow
 - ✅ Family context switching and multi-family support
 - ✅ Zustand state management for global application state
+- ✅ Comprehensive reminders system with email notifications
+- ✅ Interactive calendar interface with react-big-calendar
+- ✅ Recurring reminders with smart date handling
+- ✅ Automated reminder processing with cron jobs
+- ✅ "Notified" status concept for reminder completion
 
 ### Budget Page Features
 - **Tabbed interface**: Separate views for Active Budgets and Templates
@@ -292,5 +344,18 @@ The application implements a comprehensive budget management system with recurri
 - **SMTP Integration**: Configured with Mailtrap for development/testing
 - **HTML email templates**: Professional design with responsive layout
 - **Invitation emails**: Automatic sending when family invitations are created
+- **Reminder notifications**: Automated payment reminder emails with rich formatting
 - **Expiration handling**: Clear communication of invitation expiry dates
 - **Multi-language support**: Email content in Spanish (Colombian localization)
+- **Priority-based styling**: Visual indicators for reminder urgency levels
+
+### Reminders Page Features
+- **Interactive calendar**: react-big-calendar with Spanish localization and moment.js
+- **Calendar views**: Month, Week, Day, and Agenda views with smooth navigation
+- **Event interactions**: Click events to edit, click empty dates to create new reminders
+- **Date validation**: Prevents creation of reminders for past dates
+- **Recurring logic**: Smart handling of daily, weekly, monthly, quarterly, and yearly recurrence
+- **Priority visualization**: Color-coded priority levels with visual indicators
+- **Notification status**: Clear "notified" vs "pending" status display
+- **Family integration**: Role-based permissions and family-scoped data access
+- **Automatic completion**: Non-recurring reminders auto-complete after notification

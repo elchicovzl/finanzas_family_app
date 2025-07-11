@@ -1,3 +1,5 @@
+// RUTA: src/app/layout.tsx
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -19,13 +21,16 @@ export const metadata: Metadata = {
   description: "Manage your personal finances with bank integration via Belvo",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
+// El layout raíz también tiene acceso a los params de la ruta
+type RootLayoutProps = {
   children: React.ReactNode;
-}>) {
+  params: { locale: string };
+};
+
+export default function RootLayout({ children, params: { locale } }: RootLayoutProps) {
   return (
-    <html lang="en">
+    // Ahora el idioma se establece aquí dinámicamente
+    <html lang={locale}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

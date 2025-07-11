@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { useTranslations } from '@/hooks/use-translations'
 import {
   LayoutDashboard,
   CreditCard,
@@ -14,44 +15,39 @@ import {
   Bell
 } from 'lucide-react'
 
-const navigation = [
+const getNavigation = (t: (key: string) => string) => [
   {
-    name: 'Dashboard',
+    name: t('navigation.dashboard'),
     href: '/dashboard',
     icon: LayoutDashboard,
   },
   {
-    name: 'Transactions',
+    name: t('navigation.transactions'),
     href: '/transactions',
     icon: Receipt,
   },
   {
-    name: 'Budget',
+    name: t('navigation.budget'),
     href: '/budget',
     icon: Target,
   },
   {
-    name: 'Reminders',
+    name: t('navigation.reminders'),
     href: '/reminders',
     icon: Bell,
   },
   {
-    name: 'Analytics',
-    href: '/analytics',
-    icon: PieChart,
-  },
-  {
-    name: 'Accounts',
+    name: t('navigation.accounts'),
     href: '/accounts',
     icon: CreditCard,
   },
   {
-    name: 'Family',
+    name: t('navigation.family'),
     href: '/family',
     icon: Users,
   },
   {
-    name: 'Settings',
+    name: t('navigation.settings'),
     href: '/settings',
     icon: Settings,
   },
@@ -63,6 +59,8 @@ interface MainNavProps {
 
 export function MainNav({ className }: MainNavProps) {
   const pathname = usePathname()
+  const { t } = useTranslations()
+  const navigation = getNavigation(t)
 
   return (
     <nav className={cn('flex items-center space-x-4 lg:space-x-6', className)}>
@@ -70,7 +68,7 @@ export function MainNav({ className }: MainNavProps) {
         const Icon = item.icon
         return (
           <Link
-            key={item.name}
+            key={item.href}
             href={item.href}
             className={cn(
               'flex items-center space-x-2 text-sm font-medium transition-colors hover:text-primary',
