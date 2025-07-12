@@ -4,6 +4,7 @@ import GoogleProvider from 'next-auth/providers/google'
 import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import { prisma } from './db'
 import bcrypt from 'bcryptjs'
+import { sendWelcomeEmail } from './email'
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -50,9 +51,27 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt'
   },
   pages: {
-    signIn: '/auth/signin',
+    signIn: '/signin',
   },
   callbacks: {
+    async signIn({ user, account, profile, isNewUser }) {
+      // Send welcome email for new Google users
+      if (isNewUser && account?.provider === 'google' && user.email && user.name) {
+        const loginUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/dashboard`
+        
+        // Send welcome email asynchronously
+        sendWelcomeEmail({
+          to: user.email,
+          userName: user.name,
+          isGoogleSignup: true,
+          loginUrl
+        }).catch(error => {
+          console.error('Failed to send welcome email for Google signup:', error)
+          // Don't fail the signin if email fails
+        })
+      }
+      return true
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id

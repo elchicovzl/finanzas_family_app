@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog'
 import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslations } from '@/hooks/use-translations'
 
 interface Category {
   id: string
@@ -36,6 +37,7 @@ export default function AddTransactionModal({
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange
 }: AddTransactionModalProps) {
+  const { t } = useTranslations()
   const [internalOpen, setInternalOpen] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
   const [submitting, setSubmitting] = useState(false)
@@ -88,8 +90,8 @@ export default function AddTransactionModal({
     
     // Validate that either category or custom category is provided
     if (!formData.categoryId && !formData.customCategory) {
-      toast.warning('Category required', {
-        description: 'Please select a category or enter a custom category name.'
+      toast.warning(t('transactions.modal.validation.categoryRequired'), {
+        description: t('transactions.modal.validation.categoryRequiredDesc')
       })
       return
     }
@@ -119,11 +121,17 @@ export default function AddTransactionModal({
       if (response.ok) {
         setIsOpen(false)
         resetForm()
-        toast.success('Transaction added successfully!', {
-          description: `${formData.type === 'INCOME' ? 'Income' : 'Expense'} of ${new Intl.NumberFormat('es-CO', {
-            style: 'currency',
-            currency: 'COP'
-          }).format(parseFloat(formData.amount.replace(/[^0-9.]/g, '')))} recorded.`
+        const formattedAmount = new Intl.NumberFormat('es-CO', {
+          style: 'currency',
+          currency: 'COP'
+        }).format(parseFloat(formData.amount.replace(/[^0-9.]/g, '')))
+        
+        const descriptionKey = formData.type === 'INCOME' 
+          ? 'transactions.modal.success.incomeRecorded'
+          : 'transactions.modal.success.expenseRecorded'
+        
+        toast.success(t('transactions.modal.success.transactionAdded'), {
+          description: t(descriptionKey, { amount: formattedAmount })
         })
         
         // Call the callback to refresh data
@@ -132,14 +140,14 @@ export default function AddTransactionModal({
         }
       } else {
         const errorData = await response.json()
-        toast.error('Failed to add transaction', {
-          description: errorData.error || 'Please try again.'
+        toast.error(t('transactions.modal.error.failedToAdd'), {
+          description: errorData.error || t('transactions.modal.error.tryAgain')
         })
       }
     } catch (error) {
       console.error('Error creating transaction:', error)
-      toast.error('Connection error', {
-        description: 'Unable to connect to server. Please check your internet connection.'
+      toast.error(t('transactions.modal.error.connectionError'), {
+        description: t('transactions.modal.error.checkConnection')
       })
     } finally {
       setSubmitting(false)
@@ -160,7 +168,7 @@ export default function AddTransactionModal({
   const defaultTrigger = (
     <Button>
       <Plus className="mr-2 h-4 w-4" />
-      Add Transaction
+      {t('transactions.addTransaction')}
     </Button>
   )
 
@@ -171,17 +179,17 @@ export default function AddTransactionModal({
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Add Manual Transaction</DialogTitle>
+          <DialogTitle>{t('transactions.modal.title')}</DialogTitle>
           <DialogDescription>
-            Add a cash transaction or expense not tracked by your bank
+            {t('transactions.modal.description')}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">{t('transactions.modal.form.description')}</Label>
             <Input 
               id="description" 
-              placeholder="e.g., Coffee at Starbucks"
+              placeholder={t('transactions.modal.form.descriptionPlaceholder')}
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               required
@@ -189,11 +197,11 @@ export default function AddTransactionModal({
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="amount">Amount (COP)</Label>
+            <Label htmlFor="amount">{t('transactions.modal.form.amount')}</Label>
             <Input 
               id="amount" 
               type="text"
-              placeholder="50,000"
+              placeholder={t('transactions.modal.form.amountPlaceholder')}
               value={formData.amount}
               onChange={(e) => {
                 const formatted = formatAmount(e.target.value)
@@ -204,23 +212,23 @@ export default function AddTransactionModal({
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="type">Type</Label>
+            <Label htmlFor="type">{t('transactions.modal.form.type')}</Label>
             <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}>
               <SelectTrigger>
-                <SelectValue placeholder="Select type" />
+                <SelectValue placeholder={t('transactions.modal.form.typePlaceholder')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="INCOME">Income</SelectItem>
-                <SelectItem value="EXPENSE">Expense</SelectItem>
+                <SelectItem value="INCOME">{t('transactions.income')}</SelectItem>
+                <SelectItem value="EXPENSE">{t('transactions.expense')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
+            <Label htmlFor="category">{t('transactions.modal.form.category')}</Label>
             <Select value={formData.categoryId} onValueChange={(value) => setFormData(prev => ({ ...prev, categoryId: value, customCategory: '' }))}>
               <SelectTrigger>
-                <SelectValue placeholder="Select category" />
+                <SelectValue placeholder={t('transactions.modal.form.categoryPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {categories.map((category) => (
@@ -236,17 +244,17 @@ export default function AddTransactionModal({
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="customCategory">Or Custom Category</Label>
+            <Label htmlFor="customCategory">{t('transactions.modal.form.customCategory')}</Label>
             <Input 
               id="customCategory" 
-              placeholder="Custom category name"
+              placeholder={t('transactions.modal.form.customCategoryPlaceholder')}
               value={formData.customCategory}
               onChange={(e) => setFormData(prev => ({ ...prev, customCategory: e.target.value, categoryId: '' }))}
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="date">Date</Label>
+            <Label htmlFor="date">{t('transactions.modal.form.date')}</Label>
             <Input 
               id="date" 
               type="date"
@@ -257,10 +265,10 @@ export default function AddTransactionModal({
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="reference">Reference (Optional)</Label>
+            <Label htmlFor="reference">{t('transactions.modal.form.reference')}</Label>
             <Input 
               id="reference" 
-              placeholder="Receipt number, notes, etc."
+              placeholder={t('transactions.modal.form.referencePlaceholder')}
               value={formData.reference}
               onChange={(e) => setFormData(prev => ({ ...prev, reference: e.target.value }))}
             />
@@ -273,14 +281,14 @@ export default function AddTransactionModal({
               className="flex-1"
               onClick={() => setIsOpen(false)}
             >
-              Cancel
+              {t('transactions.modal.buttons.cancel')}
             </Button>
             <Button 
               type="submit" 
               className="flex-1"
               disabled={submitting}
             >
-              {submitting ? 'Adding...' : 'Add Transaction'}
+              {submitting ? t('transactions.modal.buttons.adding') : t('transactions.modal.buttons.addTransaction')}
             </Button>
           </div>
         </form>

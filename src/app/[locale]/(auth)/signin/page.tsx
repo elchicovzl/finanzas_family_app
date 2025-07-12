@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, Suspense } from 'react'
 import { signIn, getSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -20,7 +20,7 @@ function SignInForm() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { t } = useTranslations()
+  const { t, locale } = useTranslations()
   
   const callbackUrl = searchParams.get('callbackUrl')
   const message = searchParams.get('message')
@@ -45,11 +45,12 @@ function SignInForm() {
           if (callbackUrl) {
             router.push(callbackUrl)
           } else {
-            router.push('/dashboard')
+            router.push(`/${locale}/dashboard`)
           }
         }
       }
-    } catch (error) {
+    } catch (err) {
+      console.error('Signin error:', err)
       setError(t('auth.signin.error'))
     } finally {
       setLoading(false)
@@ -61,9 +62,10 @@ function SignInForm() {
     setError('')
     try {
       await signIn('google', {
-        callbackUrl: callbackUrl || '/dashboard'
+        callbackUrl: callbackUrl || `/${locale}/dashboard`
       })
-    } catch (error) {
+    } catch (err) {
+      console.error('Google signin error:', err)
       setError(t('auth.signin.error'))
       setLoading(false)
     }

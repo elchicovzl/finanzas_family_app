@@ -2,17 +2,24 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { getFamilyContext } from '@/lib/family-context'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Get family context to ensure proper access control
+    const familyContext = await getFamilyContext()
+    if (!familyContext || !familyContext.family) {
+      return NextResponse.json({ error: 'Family context required' }, { status: 400 })
     }
 
     const accounts = await prisma.bankAccount.findMany({
       where: { 
-        userId: session.user.id,
+        familyId: familyContext.family.id,
         isActive: true 
       },
       include: {

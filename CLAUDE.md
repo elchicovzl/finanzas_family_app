@@ -144,9 +144,9 @@ DATABASE_URL="postgresql://..."
 
 # Authentication
 NEXTAUTH_SECRET="..."
-NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_URL="https://your-domain.vercel.app"
 
-# Google OAuth
+# Google OAuth (Optional)
 GOOGLE_CLIENT_ID="..."
 GOOGLE_CLIENT_SECRET="..."
 
@@ -154,18 +154,66 @@ GOOGLE_CLIENT_SECRET="..."
 BELVO_SECRET_ID="..."
 BELVO_SECRET_PASSWORD="..."
 BELVO_ENVIRONMENT="sandbox"
-BELVO_WEBHOOK_URL="..."
+BELVO_WEBHOOK_URL="https://your-domain.vercel.app/api/belvo/webhook"
+BELVO_WEBHOOK_SECRET="your-secure-webhook-secret"
 
-# Cron Jobs Security
-CRON_SECRET="..."
+# Cron Jobs Security (CRITICAL)
+CRON_SECRET="your-secure-cron-secret-here"
 
-# Email Configuration (Mailtrap)
-EMAIL_SERVER_HOST="smtp.mailtrap.io"
-EMAIL_SERVER_PORT="2525"
-EMAIL_SERVER_USER="..."
-EMAIL_SERVER_PASSWORD="..."
-EMAIL_FROM="noreply@finanzasapp.com"
+# Email Configuration with Resend (Production)
+RESEND_API_KEY="re_xxxxxxxxxxxxx"
+EMAIL_FROM="FamFinz <noreply@your-domain.com>"
+EMAIL_DOMAIN="your-domain.com"
+
+# Legacy Email Configuration (No longer needed)
+# EMAIL_SERVER_HOST="smtp.mailtrap.io"
+# EMAIL_SERVER_PORT="2525"
+# EMAIL_SERVER_USER="..."
+# EMAIL_SERVER_PASSWORD="..."
 ```
+
+## Email System Architecture
+
+### Email Service (Resend + React Email)
+The application uses **Resend** as the email delivery service with **React Email** for professional HTML templates:
+
+#### Email Templates
+- **FamilyInvitationEmail**: Family invitation emails with branded design and feature highlights
+- **ReminderEmail**: Payment reminder notifications with priority indicators and urgency states
+- **WelcomeEmail**: New user onboarding emails (supports both regular and Google OAuth registration)
+- **EmailLayout**: Shared layout component with FamFinz branding and responsive design
+
+#### Email Configuration
+```typescript
+// Located in src/lib/email.ts
+import { Resend } from 'resend'
+import { render } from '@react-email/render'
+
+// Email templates are React components that generate HTML
+const emailHtml = render(FamilyInvitationEmail({ ... }))
+```
+
+#### Automated Email Triggers
+1. **Family Invitations**: Sent when admins invite new family members
+2. **Payment Reminders**: Daily cron job processes due reminders and sends notifications
+3. **Welcome Emails**: 
+   - Regular registration: Sent after successful account creation
+   - Google OAuth: Sent during first-time Google sign-in via NextAuth callback
+4. **Reminder Notifications**: Configurable advance notifications (1-30 days before due date)
+
+#### Email Features
+- **Professional Design**: Responsive templates with FamFinz branding and logo
+- **Localization**: Spanish-first design with Colombian date/currency formatting
+- **Priority Indicators**: Color-coded priority levels for reminders
+- **Urgency States**: Different styling for overdue, today, tomorrow, and future reminders
+- **Branded From Address**: "FamFinz <noreply@domain.com>" format
+- **Async Delivery**: Non-blocking email sending that doesn't affect API response times
+
+#### Security & Deliverability
+- **Domain Authentication**: Requires verified domain in Resend dashboard
+- **Rate Limiting**: Email sending respects Resend's rate limits
+- **Error Handling**: Failed emails are logged but don't break application flow
+- **SPF/DKIM**: Automatic setup through Resend for improved deliverability
 
 ## Database Schema Key Points
 
@@ -270,10 +318,37 @@ The application implements a comprehensive budget management system with recurri
 - Form validation in frontend components
 
 ### Security Considerations
-- All database queries filtered by authenticated user ID
-- No direct foreign key exposure in API responses
-- Encrypted credential storage via NextAuth.js
-- Cron job authentication via `CRON_SECRET` token verification
+The application implements comprehensive security measures:
+
+#### API Security
+- **Family Context Validation**: All financial data filtered by family membership and permissions
+- **Role-Based Access Control**: ADMIN, MEMBER, VIEWER permissions enforced at API level
+- **Rate Limiting**: Configurable rate limits on public endpoints (auth, webhooks)
+- **Request Validation**: Zod schemas for all API input validation
+- **No Direct Foreign Key Exposure**: API responses use controlled data structures
+
+#### Authentication & Authorization
+- **NextAuth.js**: Secure session management with JWT strategy
+- **Google OAuth**: Optional single sign-on with automated welcome emails
+- **Password Security**: bcrypt hashing with salt rounds 12
+- **Session Persistence**: Prisma adapter for user session storage
+
+#### Webhook Security
+- **Belvo Webhook Verification**: HMAC SHA-256 signature validation
+- **Cron Job Authentication**: Secure token verification for automated tasks
+- **Rate Limited Webhooks**: Protection against webhook flooding attacks
+
+#### Infrastructure Security
+- **Security Headers**: Comprehensive CSP, HSTS, XSS protection via middleware
+- **CORS Configuration**: Restrictive cross-origin resource sharing policies
+- **Information Disclosure Prevention**: Server headers stripped, error details sanitized
+- **Input Sanitization**: All user inputs validated and sanitized before processing
+
+#### Database Security
+- **Family-Scoped Queries**: All financial data operations require valid family context
+- **Transaction Atomicity**: Critical operations use database transactions
+- **Encrypted Connections**: PostgreSQL connections over TLS
+- **Audit Logging**: Security-sensitive operations logged for monitoring
 
 ## Deployment Configuration
 
@@ -317,7 +392,6 @@ The application implements a comprehensive budget management system with recurri
 - ✅ Currency formatting (Colombian Peso - COP)
 - ✅ Input masking for monetary values (thousands separators, no decimals)
 - ✅ Family management system with role-based access control
-- ✅ Email invitation system with complete user onboarding flow
 - ✅ Family context switching and multi-family support
 - ✅ Zustand state management for global application state
 - ✅ Comprehensive reminders system with email notifications
@@ -325,6 +399,12 @@ The application implements a comprehensive budget management system with recurri
 - ✅ Recurring reminders with smart date handling
 - ✅ Automated reminder processing with cron jobs
 - ✅ "Notified" status concept for reminder completion
+- ✅ **Professional Email System** with Resend + React Email
+- ✅ **Branded Email Templates** for invitations, reminders, and welcome messages
+- ✅ **Automated Welcome Emails** for new users and Google OAuth sign-ups
+- ✅ **Enhanced Security** with rate limiting, webhook verification, and security headers
+- ✅ **Comprehensive API Security** with family-scoped data access and role validation
+- ✅ **Internationalization Support** with next-intl for Spanish/English localization
 
 ### Budget Page Features
 - **Tabbed interface**: Separate views for Active Budgets and Templates
@@ -341,13 +421,18 @@ The application implements a comprehensive budget management system with recurri
 - **Responsive invitation flow**: Handles both new user registration and existing user login
 
 ### Email System Features
-- **SMTP Integration**: Configured with Mailtrap for development/testing
-- **HTML email templates**: Professional design with responsive layout
-- **Invitation emails**: Automatic sending when family invitations are created
-- **Reminder notifications**: Automated payment reminder emails with rich formatting
-- **Expiration handling**: Clear communication of invitation expiry dates
-- **Multi-language support**: Email content in Spanish (Colombian localization)
-- **Priority-based styling**: Visual indicators for reminder urgency levels
+- **Resend Integration**: Production-ready email delivery with excellent deliverability
+- **React Email Templates**: Modern, responsive HTML emails built with React components
+- **Branded Design**: Professional templates featuring FamFinz logo and consistent styling
+- **Automated Triggers**: 
+  - Family invitations with feature highlights and expiration warnings
+  - Payment reminders with priority-based styling and urgency indicators
+  - Welcome emails for new users (both regular registration and Google OAuth)
+- **Smart Notifications**: Configurable advance notifications (1-30 days before due dates)
+- **Localization**: Spanish-first design with Colombian date/currency formatting
+- **Professional Branding**: "FamFinz <noreply@domain.com>" from address format
+- **Error Resilience**: Async email delivery that doesn't break application flow
+- **Security**: Domain authentication and SPF/DKIM setup through Resend
 
 ### Reminders Page Features
 - **Interactive calendar**: react-big-calendar with Spanish localization and moment.js
