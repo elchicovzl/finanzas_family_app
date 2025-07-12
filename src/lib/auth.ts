@@ -4,7 +4,7 @@ import GoogleProvider from 'next-auth/providers/google'
 import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import { prisma } from './db'
 import bcrypt from 'bcryptjs'
-import { sendWelcomeEmail } from './email'
+import { createWelcomeEmailJob } from './email-jobs'
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -59,15 +59,15 @@ export const authOptions: NextAuthOptions = {
       if (isNewUser && account?.provider === 'google' && user.email && user.name) {
         const loginUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/dashboard`
         
-        // Send welcome email asynchronously
-        sendWelcomeEmail({
+        // Create welcome email job asynchronously
+        createWelcomeEmailJob({
           to: user.email,
           userName: user.name,
           isGoogleSignup: true,
           loginUrl
         }).catch(error => {
-          console.error('Failed to send welcome email for Google signup:', error)
-          // Don't fail the signin if email fails
+          console.error('Failed to create welcome email job for Google signup:', error)
+          // Don't fail the signin if job creation fails
         })
       }
       return true

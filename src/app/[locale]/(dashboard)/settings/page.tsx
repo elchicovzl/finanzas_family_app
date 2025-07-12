@@ -15,6 +15,7 @@ export default function SettingsPage() {
   const [selectedLanguage, setSelectedLanguage] = useState<'es' | 'en'>(locale)
   const [isTestingEmail, setIsTestingEmail] = useState(false)
   const [isTestingWelcomeEmail, setIsTestingWelcomeEmail] = useState(false)
+  const [isProcessingJobs, setIsProcessingJobs] = useState(false)
 
   const handleLanguageChange = (newLocale: 'es' | 'en') => {
     setSelectedLanguage(newLocale)
@@ -85,6 +86,40 @@ export default function SettingsPage() {
       )
     } finally {
       setIsTestingWelcomeEmail(false)
+    }
+  }
+
+  const handleProcessJobs = async () => {
+    setIsProcessingJobs(true)
+    try {
+      const response = await fetch('/api/test-process-emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        const results = data.processResult?.results
+        toast.success(
+          locale === 'es' 
+            ? `Jobs procesados: ${results?.processed || 0} total, ${results?.succeeded || 0} exitosos, ${results?.failed || 0} fallidos` 
+            : `Jobs processed: ${results?.processed || 0} total, ${results?.succeeded || 0} succeeded, ${results?.failed || 0} failed`
+        )
+      } else {
+        throw new Error(data.error || 'Error procesando jobs')
+      }
+    } catch (error) {
+      console.error('Error processing jobs:', error)
+      toast.error(
+        locale === 'es' 
+          ? 'Error procesando jobs de email. Revisa los logs del servidor.' 
+          : 'Error processing email jobs. Check server logs.'
+      )
+    } finally {
+      setIsProcessingJobs(false)
     }
   }
 
@@ -241,10 +276,23 @@ export default function SettingsPage() {
                 }
               </Button>
               
+              <Button 
+                onClick={handleProcessJobs}
+                disabled={isProcessingJobs}
+                variant="secondary"
+                className="w-full justify-start"
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                {isProcessingJobs 
+                  ? (locale === 'es' ? 'Procesando...' : 'Processing...') 
+                  : (locale === 'es' ? 'Procesar Jobs de Email' : 'Process Email Jobs')
+                }
+              </Button>
+              
               <p className="text-sm text-gray-600">
                 {locale === 'es'
-                  ? 'Se enviará un correo usando las mismas configuraciones que el registro. Revisa tu bandeja de entrada y carpeta de spam.'
-                  : 'An email will be sent using the same settings as registration. Check your inbox and spam folder.'
+                  ? 'Prueba el sistema de correos y procesa jobs pendientes manualmente. El cron job se ejecuta cada 2 minutos automáticamente.'
+                  : 'Test the email system and manually process pending jobs. The cron job runs every 2 minutes automatically.'
                 }
               </p>
             </div>

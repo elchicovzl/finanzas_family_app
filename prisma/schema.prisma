@@ -357,3 +357,32 @@ enum ReminderPriority {
   HIGH
   URGENT
 }
+
+model EmailJob {
+  id          String   @id @default(cuid())
+  type        EmailJobType
+  to          String
+  data        Json     // Datos específicos del email (userName, loginUrl, etc.)
+  status      EmailJobStatus @default(PENDING)
+  attempts    Int      @default(0)
+  maxAttempts Int      @default(3)
+  error       String?  // Último error si falló
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  processedAt DateTime?
+
+  @@map("email_jobs")
+}
+
+enum EmailJobType {
+  WELCOME_EMAIL
+  FAMILY_INVITATION
+  REMINDER_EMAIL
+}
+
+enum EmailJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}

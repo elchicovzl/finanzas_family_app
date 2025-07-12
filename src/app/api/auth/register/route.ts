@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
 import { z } from 'zod'
 import { rateLimiters } from '@/lib/rate-limiter'
-import { sendWelcomeEmail } from '@/lib/email'
+import { createWelcomeEmailJob } from '@/lib/email-jobs'
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -32,7 +32,9 @@ export async function POST(request: NextRequest) {
     )
   }
   try {
+    console.log('=== REGISTRATION START ===')
     const body = await request.json()
+    console.log('Registration request body:', { name: body.name, email: body.email })
     
     const result = registerSchema.safeParse(body)
     if (!result.success) {
@@ -57,6 +59,7 @@ export async function POST(request: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(password, 12)
 
+    console.log('Creating user in database...')
     const user = await prisma.user.create({
       data: {
         name,
@@ -64,27 +67,31 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
       },
     })
+    console.log('✅ User created successfully with ID:', user.id)
 
-    // Send welcome email asynchronously (don't block the response)
+    // Create welcome email job (to be processed by cron job)
     const loginUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/signin`
     
-    console.log('=== REGISTRATION EMAIL TRIGGER ===')
-    console.log('Sending welcome email to:', email)
+    console.log('=== REGISTRATION EMAIL JOB CREATION ===')
+    console.log('Creating welcome email job for:', email)
     console.log('User name:', name)
     console.log('Login URL:', loginUrl)
-    console.log('===================================')
+    console.log('==========================================')
     
-    sendWelcomeEmail({
-      to: email,
-      userName: name,
-      isGoogleSignup: false,
-      loginUrl
-    }).catch(error => {
-      console.error('❌ Failed to send welcome email:', error)
-      console.error('❌ Error details:', JSON.stringify(error, null, 2))
-      // Don't fail the registration if email fails
-    })
+    try {
+      await createWelcomeEmailJob({
+        to: email,
+        userName: name,
+        isGoogleSignup: false,
+        loginUrl
+      })
+      console.log('✅ Welcome email job created successfully!')
+    } catch (error) {
+      console.error('❌ Failed to create welcome email job:', error)
+      // Don't fail the registration if job creation fails
+    }
 
+    console.log('Registration process completed, returning response...')
     return NextResponse.json(
       { message: 'User created successfully', userId: user.id },
       { status: 201 }
