@@ -2,6 +2,7 @@
 
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import AuthProvider from "@/components/providers/auth-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -34,6 +35,14 @@ export default function RootLayout({ children, params: { locale } }: RootLayoutP
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {/* DataFast Analytics */}
+        <Script
+          src="https://datafa.st/js/script.js"
+          data-website-id="6871f0189cf2f572649bba2b"
+          data-domain="famfinz.com"
+          strategy="afterInteractive"
+        />
+        
         <AuthProvider>
           {children}
           <Toaster />
