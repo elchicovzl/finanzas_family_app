@@ -59,6 +59,7 @@ interface BudgetTemplate {
   autoGenerate: boolean
   lastGenerated: Date | null
   formattedLimit: string
+  isRunning?: boolean
   category: {
     name: string
     color: string
@@ -88,7 +89,8 @@ export default function BudgetPage() {
   const { currentFamily } = useFamilyStore()
   const { t, locale } = useTranslations()
   const [budgets, setBudgets] = useState<Budget[]>([])
-  const [templates, setTemplates] = useState<BudgetTemplate[]>([])
+  const [templates, setTemplates] = useState<BudgetTemplate[]>([])  
+  const [templatesLoading, setTemplatesLoading] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
   const [missingBudgets, setMissingBudgets] = useState<MissingBudgetsResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -252,7 +254,13 @@ export default function BudgetPage() {
     }
   }
 
-  const generateBudgetFromTemplate = async (templateId: string) => {
+  const generateBudgetFromTemplate = async (templateId: string, isRunning?: boolean) => {
+    if (isRunning) {
+      toast.info(t('budget.templates.generateDisabled'))
+      return
+    }
+    
+    setTemplatesLoading(true)
     try {
       const response = await fetch('/api/budget/generate', {
         method: 'POST',
@@ -271,6 +279,8 @@ export default function BudgetPage() {
       }
     } catch (error) {
       toast.error(t('budget.errorGeneratingBudget'))
+    } finally {
+      setTemplatesLoading(false)
     }
   }
 
@@ -315,11 +325,6 @@ export default function BudgetPage() {
     }
   }
 
-  const getProgressColor = (percentage: number) => {
-    if (percentage >= 100) return 'bg-red-500'
-    if (percentage >= 80) return 'bg-yellow-500'
-    return 'bg-green-500'
-  }
 
   const formatCurrency = (amount: number) => {
     const localeCode = locale === 'es' ? 'es-CO' : 'en-US'
@@ -602,11 +607,24 @@ export default function BudgetPage() {
         </Card>
       )}
 
+      <div className="flex items-center space-x-2 mb-6">
+        <Badge 
+          variant={activeTab === 'budgets' ? 'default' : 'secondary'}
+          className="cursor-pointer px-4 py-2 text-sm font-medium transition-colors hover:bg-primary/80"
+          onClick={() => setActiveTab('budgets')}
+        >
+          {t('budget.activeBudgets')}
+        </Badge>
+        <Badge 
+          variant={activeTab === 'templates' ? 'default' : 'secondary'}
+          className="cursor-pointer px-4 py-2 text-sm font-medium transition-colors hover:bg-primary/80"
+          onClick={() => setActiveTab('templates')}
+        >
+          {t('budget.templates.title')}
+        </Badge>
+      </div>
+
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'budgets' | 'templates')}>
-        <TabsList>
-          <TabsTrigger value="budgets">{t('budget.activeBudgets')}</TabsTrigger>
-          <TabsTrigger value="templates">{t('budget.templates')}</TabsTrigger>
-        </TabsList>
         
         <TabsContent value="budgets" className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -755,9 +773,16 @@ export default function BudgetPage() {
                       <span>{template.category.icon}</span>
                       <CardTitle className="text-lg">{template.name}</CardTitle>
                     </div>
-                    <Badge variant={template.autoGenerate ? "default" : "secondary"}>
-                      {template.autoGenerate ? t('budget.auto') : t('budget.manual')}
-                    </Badge>
+                    <div className="flex items-center space-x-2">
+                      <Badge variant={template.autoGenerate ? "default" : "secondary"}>
+                        {template.autoGenerate ? t('budget.templates.auto') : t('budget.manual')}
+                      </Badge>
+                      {template.isRunning && (
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                          {t('budget.templates.running')}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                   <CardDescription>
                     {template.category.name} • {template.period.toLowerCase()}
@@ -785,12 +810,14 @@ export default function BudgetPage() {
                   
                   <div className="flex space-x-2">
                     <Button 
-                      onClick={() => generateBudgetFromTemplate(template.id)}
+                      onClick={() => generateBudgetFromTemplate(template.id, template.isRunning)}
                       className="flex-1"
                       size="sm"
+                      disabled={template.isRunning || templatesLoading}
+                      variant={template.isRunning ? "outline" : "default"}
                     >
                       <Play className="mr-2 h-4 w-4" />
-                      {t('budget.generateBudget')}
+                      {template.isRunning ? t('budget.templates.generateDisabled') : t('budget.templates.generate')}
                     </Button>
                     <Button 
                       variant="outline" 

@@ -8,14 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
-import { Settings, Globe, User, Bell, Shield, Palette, Mail } from 'lucide-react'
+import { Settings, Globe, Palette, User, Bell, Shield } from 'lucide-react'
 
 export default function SettingsPage() {
   const { t, locale, changeLanguage, isLoading } = useTranslations()
   const [selectedLanguage, setSelectedLanguage] = useState<'es' | 'en'>(locale)
-  const [isTestingEmail, setIsTestingEmail] = useState(false)
-  const [isTestingWelcomeEmail, setIsTestingWelcomeEmail] = useState(false)
-  const [isProcessingJobs, setIsProcessingJobs] = useState(false)
 
   const handleLanguageChange = (newLocale: 'es' | 'en') => {
     setSelectedLanguage(newLocale)
@@ -23,105 +20,6 @@ export default function SettingsPage() {
     toast.success(t('messages.languageChanged'))
   }
 
-  const handleTestEmail = async () => {
-    setIsTestingEmail(true)
-    try {
-      const response = await fetch('/api/test-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        toast.success(
-          locale === 'es' 
-            ? `Correo de prueba enviado exitosamente a ${data.sentTo}` 
-            : `Test email sent successfully to ${data.sentTo}`
-        )
-      } else {
-        throw new Error(data.error || 'Error enviando correo')
-      }
-    } catch (error) {
-      console.error('Error testing email:', error)
-      toast.error(
-        locale === 'es' 
-          ? 'Error enviando correo de prueba. Revisa los logs del servidor.' 
-          : 'Error sending test email. Check server logs.'
-      )
-    } finally {
-      setIsTestingEmail(false)
-    }
-  }
-
-  const handleTestWelcomeEmail = async () => {
-    setIsTestingWelcomeEmail(true)
-    try {
-      const response = await fetch('/api/test-welcome-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        toast.success(
-          locale === 'es' 
-            ? `Correo de bienvenida (registro) enviado exitosamente a ${data.sentTo}` 
-            : `Welcome email (registration) sent successfully to ${data.sentTo}`
-        )
-      } else {
-        throw new Error(data.error || 'Error enviando correo')
-      }
-    } catch (error) {
-      console.error('Error testing welcome email:', error)
-      toast.error(
-        locale === 'es' 
-          ? 'Error enviando correo de bienvenida. Revisa los logs del servidor.' 
-          : 'Error sending welcome email. Check server logs.'
-      )
-    } finally {
-      setIsTestingWelcomeEmail(false)
-    }
-  }
-
-  const handleProcessJobs = async () => {
-    setIsProcessingJobs(true)
-    try {
-      const response = await fetch('/api/test-process-emails', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        const results = data.processResult?.results
-        toast.success(
-          locale === 'es' 
-            ? `Jobs procesados: ${results?.processed || 0} total, ${results?.succeeded || 0} exitosos, ${results?.failed || 0} fallidos` 
-            : `Jobs processed: ${results?.processed || 0} total, ${results?.succeeded || 0} succeeded, ${results?.failed || 0} failed`
-        )
-      } else {
-        throw new Error(data.error || 'Error procesando jobs')
-      }
-    } catch (error) {
-      console.error('Error processing jobs:', error)
-      toast.error(
-        locale === 'es' 
-          ? 'Error procesando jobs de email. Revisa los logs del servidor.' 
-          : 'Error processing email jobs. Check server logs.'
-      )
-    } finally {
-      setIsProcessingJobs(false)
-    }
-  }
 
   if (isLoading) {
     return (
@@ -233,71 +131,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Email Testing */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center space-x-2">
-              <Mail className="h-5 w-5" />
-              <CardTitle>
-                {locale === 'es' ? 'Prueba de Correo' : 'Email Testing'}
-              </CardTitle>
-            </div>
-            <CardDescription>
-              {locale === 'es'
-                ? 'Envía un correo de prueba para verificar que la configuración funciona correctamente'
-                : 'Send a test email to verify that the configuration works correctly'
-              }
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <Button 
-                onClick={handleTestEmail}
-                disabled={isTestingEmail}
-                className="w-full justify-start"
-              >
-                <Mail className="h-4 w-4 mr-2" />
-                {isTestingEmail 
-                  ? (locale === 'es' ? 'Enviando...' : 'Sending...') 
-                  : (locale === 'es' ? 'Enviar Correo de Prueba' : 'Send Test Email')
-                }
-              </Button>
-              
-              <Button 
-                onClick={handleTestWelcomeEmail}
-                disabled={isTestingWelcomeEmail}
-                variant="outline"
-                className="w-full justify-start"
-              >
-                <Mail className="h-4 w-4 mr-2" />
-                {isTestingWelcomeEmail 
-                  ? (locale === 'es' ? 'Enviando...' : 'Sending...') 
-                  : (locale === 'es' ? 'Probar Correo de Registro' : 'Test Registration Email')
-                }
-              </Button>
-              
-              <Button 
-                onClick={handleProcessJobs}
-                disabled={isProcessingJobs}
-                variant="secondary"
-                className="w-full justify-start"
-              >
-                <Mail className="h-4 w-4 mr-2" />
-                {isProcessingJobs 
-                  ? (locale === 'es' ? 'Procesando...' : 'Processing...') 
-                  : (locale === 'es' ? 'Procesar Jobs de Email' : 'Process Email Jobs')
-                }
-              </Button>
-              
-              <p className="text-sm text-gray-600">
-                {locale === 'es'
-                  ? 'Prueba el sistema de correos y procesa jobs pendientes manualmente. El cron job se ejecuta cada 2 minutos automáticamente.'
-                  : 'Test the email system and manually process pending jobs. The cron job runs every 2 minutes automatically.'
-                }
-              </p>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Appearance Settings */}
         <Card>

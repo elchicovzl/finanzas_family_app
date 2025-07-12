@@ -70,7 +70,7 @@ export default function RemindersPage() {
   const [reminders, setReminders] = useState<Reminder[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
-  const [editingReminder, setEditingReminder] = useState<Reminder | null>(null)
+  const [editingReminder, setEditingReminder] = useState<Reminder | undefined>(undefined)
   const [currentDate, setCurrentDate] = useState(new Date())
   const [currentView, setCurrentView] = useState<'month' | 'week' | 'day' | 'agenda'>('month')
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
@@ -187,11 +187,11 @@ export default function RemindersPage() {
   const handleModalSuccess = () => {
     fetchReminders()
     fetchCalendarEvents()
-    setEditingReminder(null)
+    setEditingReminder(undefined)
   }
 
   const handleNewReminder = () => {
-    setEditingReminder(null)
+    setEditingReminder(undefined)
     setSelectedDate(null)
     setShowModal(true)
   }
@@ -201,16 +201,60 @@ export default function RemindersPage() {
     setCurrentDate(newDate)
   }
 
-  const handleViewChange = (view: 'month' | 'week' | 'day' | 'agenda') => {
-    setCurrentView(view)
+  const handleViewChange = (view: any) => {
+    setCurrentView(view as 'month' | 'week' | 'day' | 'agenda')
   }
 
   // Calendar interaction handlers
   const handleSelectEvent = (event: CalendarEvent) => {
-    // Find the full reminder data
-    const fullReminder = reminders.find(r => r.id === event.resource.id)
+    console.log('📅 Calendar event clicked:', event.title, 'ID:', event.resource.id)
+    
+    // Find the full reminder data from the reminders array first
+    let fullReminder = reminders.find(r => r.id === event.resource.id)
+    
+    // If not found in reminders array, create a reminder object from the calendar event
+    if (!fullReminder) {
+      console.log('🔄 Creating reminder object from calendar event')
+      const resource = event.resource
+      fullReminder = {
+        id: resource.id,
+        title: event.title,
+        description: resource.description || '',
+        amount: resource.amount || undefined,
+        formattedAmount: resource.formattedAmount || undefined,
+        dueDate: event.start,
+        formattedDueDate: new Intl.DateTimeFormat(locale === 'es' ? 'es-CO' : 'en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        }).format(event.start),
+        priority: resource.priority,
+        isCompleted: resource.isCompleted,
+        isRecurring: resource.isRecurring,
+        recurrenceType: resource.recurrenceType || undefined,
+        category: resource.category || undefined,
+        isNotified: resource.isNotified,
+        daysUntilDue: resource.daysUntilDue,
+        notifyDaysBefore: 1, // Default value
+        isActive: true,
+        familyId: '', // Will be filled by the API
+        createdByUserId: '', // Will be filled by the API
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        lastNotified: resource.isNotified ? new Date() : null,
+        completedAt: resource.isCompleted ? new Date() : null,
+        endDate: null,
+        recurrenceInterval: null
+      } as Reminder
+    } else {
+      console.log('✅ Found reminder in array:', fullReminder.title)
+    }
+    
     if (fullReminder) {
+      console.log('🚀 Opening edit modal for:', fullReminder.title)
       handleEditReminder(fullReminder)
+    } else {
+      console.error('❌ No reminder data found')
     }
   }
 
@@ -226,7 +270,7 @@ export default function RemindersPage() {
     
     // When clicking on a day, open modal with that date pre-selected
     setSelectedDate(start)
-    setEditingReminder(null)
+    setEditingReminder(undefined)
     setShowModal(true)
   }
 
@@ -411,7 +455,7 @@ export default function RemindersPage() {
                   }}
                   formats={{
                     monthHeaderFormat: 'MMMM YYYY',
-                    dayHeaderFormat: 'dddd DD/MM',
+                    dayHeaderFormat: 'dddd, DD MMMM',
                     dayRangeHeaderFormat: ({ start, end }) =>
                       `${moment(start).format('DD/MM')} - ${moment(end).format('DD/MM')}`,
                     agendaHeaderFormat: ({ start, end }) =>
@@ -420,8 +464,6 @@ export default function RemindersPage() {
                     dateFormat: 'DD',
                     weekdayFormat: 'dddd',
                     timeGutterFormat: 'HH:mm',
-                    monthYearFormat: 'MMMM YYYY',
-                    dayHeaderFormat: 'dddd, DD MMMM',
                     agendaDateFormat: 'dddd DD MMM',
                     agendaTimeFormat: 'HH:mm',
                     agendaTimeRangeFormat: ({ start, end }) =>
@@ -452,11 +494,12 @@ export default function RemindersPage() {
                   reminders.map((reminder) => (
                     <div
                       key={reminder.id}
-                      className={`border rounded-lg p-4 ${
+                      className={`border rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow ${
                         reminder.isNotified ? 'border-red-200 bg-red-50' : 
                         reminder.daysUntilDue === 0 ? 'border-yellow-200 bg-yellow-50' :
                         'border-gray-200'
                       }`}
+                      onClick={() => handleEditReminder(reminder)}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -510,20 +553,29 @@ export default function RemindersPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleEditReminder(reminder)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleEditReminder(reminder)
+                            }}
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleDeleteReminder(reminder.id)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteReminder(reminder.id)
+                            }}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                           <Button
                             size="sm"
-                            onClick={() => markAsCompleted(reminder.id)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              markAsCompleted(reminder.id)
+                            }}
                             disabled={reminder.isCompleted}
                           >
                             <CheckCircle className="w-4 h-4 mr-1" />
