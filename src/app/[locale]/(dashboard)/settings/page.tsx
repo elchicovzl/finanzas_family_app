@@ -14,6 +14,7 @@ export default function SettingsPage() {
   const { t, locale, changeLanguage, isLoading } = useTranslations()
   const [selectedLanguage, setSelectedLanguage] = useState<'es' | 'en'>(locale)
   const [isTestingEmail, setIsTestingEmail] = useState(false)
+  const [isTestingWelcomeEmail, setIsTestingWelcomeEmail] = useState(false)
 
   const handleLanguageChange = (newLocale: 'es' | 'en') => {
     setSelectedLanguage(newLocale)
@@ -51,6 +52,39 @@ export default function SettingsPage() {
       )
     } finally {
       setIsTestingEmail(false)
+    }
+  }
+
+  const handleTestWelcomeEmail = async () => {
+    setIsTestingWelcomeEmail(true)
+    try {
+      const response = await fetch('/api/test-welcome-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast.success(
+          locale === 'es' 
+            ? `Correo de bienvenida (registro) enviado exitosamente a ${data.sentTo}` 
+            : `Welcome email (registration) sent successfully to ${data.sentTo}`
+        )
+      } else {
+        throw new Error(data.error || 'Error enviando correo')
+      }
+    } catch (error) {
+      console.error('Error testing welcome email:', error)
+      toast.error(
+        locale === 'es' 
+          ? 'Error enviando correo de bienvenida. Revisa los logs del servidor.' 
+          : 'Error sending welcome email. Check server logs.'
+      )
+    } finally {
+      setIsTestingWelcomeEmail(false)
     }
   }
 
@@ -193,10 +227,24 @@ export default function SettingsPage() {
                   : (locale === 'es' ? 'Enviar Correo de Prueba' : 'Send Test Email')
                 }
               </Button>
+              
+              <Button 
+                onClick={handleTestWelcomeEmail}
+                disabled={isTestingWelcomeEmail}
+                variant="outline"
+                className="w-full justify-start"
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                {isTestingWelcomeEmail 
+                  ? (locale === 'es' ? 'Enviando...' : 'Sending...') 
+                  : (locale === 'es' ? 'Probar Correo de Registro' : 'Test Registration Email')
+                }
+              </Button>
+              
               <p className="text-sm text-gray-600">
                 {locale === 'es'
-                  ? 'Se enviará un correo de bienvenida a tu dirección de correo registrada. Revisa tu bandeja de entrada y carpeta de spam.'
-                  : 'A welcome email will be sent to your registered email address. Check your inbox and spam folder.'
+                  ? 'Se enviará un correo usando las mismas configuraciones que el registro. Revisa tu bandeja de entrada y carpeta de spam.'
+                  : 'An email will be sent using the same settings as registration. Check your inbox and spam folder.'
                 }
               </p>
             </div>
