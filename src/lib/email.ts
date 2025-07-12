@@ -196,6 +196,11 @@ export async function sendWelcomeEmail({
       throw new Error('Email HTML rendering failed - not a string')
     }
 
+    console.log('Resend configuration:')
+    console.log('- API Key present:', !!process.env.RESEND_API_KEY)
+    console.log('- From email:', getFromEmail())
+    console.log('- To email:', to)
+
     const { data, error } = await resend.emails.send({
       from: getFromEmail(),
       to: [to],
@@ -203,8 +208,12 @@ export async function sendWelcomeEmail({
       html: emailHtml,
     })
 
+    console.log('Resend response:')
+    console.log('- Data:', data)
+    console.log('- Error:', error)
+
     if (error) {
-      console.error('❌ Resend error:', error)
+      console.error('❌ Resend error details:', JSON.stringify(error, null, 2))
       throw new Error(`Failed to send welcome email: ${error.message}`)
     }
 

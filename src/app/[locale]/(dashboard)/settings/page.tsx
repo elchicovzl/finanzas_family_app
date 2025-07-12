@@ -8,16 +8,50 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
-import { Settings, Globe, User, Bell, Shield, Palette } from 'lucide-react'
+import { Settings, Globe, User, Bell, Shield, Palette, Mail } from 'lucide-react'
 
 export default function SettingsPage() {
   const { t, locale, changeLanguage, isLoading } = useTranslations()
   const [selectedLanguage, setSelectedLanguage] = useState<'es' | 'en'>(locale)
+  const [isTestingEmail, setIsTestingEmail] = useState(false)
 
   const handleLanguageChange = (newLocale: 'es' | 'en') => {
     setSelectedLanguage(newLocale)
     changeLanguage(newLocale)
     toast.success(t('messages.languageChanged'))
+  }
+
+  const handleTestEmail = async () => {
+    setIsTestingEmail(true)
+    try {
+      const response = await fetch('/api/test-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast.success(
+          locale === 'es' 
+            ? `Correo de prueba enviado exitosamente a ${data.sentTo}` 
+            : `Test email sent successfully to ${data.sentTo}`
+        )
+      } else {
+        throw new Error(data.error || 'Error enviando correo')
+      }
+    } catch (error) {
+      console.error('Error testing email:', error)
+      toast.error(
+        locale === 'es' 
+          ? 'Error enviando correo de prueba. Revisa los logs del servidor.' 
+          : 'Error sending test email. Check server logs.'
+      )
+    } finally {
+      setIsTestingEmail(false)
+    }
   }
 
   if (isLoading) {
@@ -127,6 +161,45 @@ export default function SettingsPage() {
               <Bell className="h-4 w-4 mr-2" />
               {t('settings.notifications')}
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* Email Testing */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center space-x-2">
+              <Mail className="h-5 w-5" />
+              <CardTitle>
+                {locale === 'es' ? 'Prueba de Correo' : 'Email Testing'}
+              </CardTitle>
+            </div>
+            <CardDescription>
+              {locale === 'es'
+                ? 'Envía un correo de prueba para verificar que la configuración funciona correctamente'
+                : 'Send a test email to verify that the configuration works correctly'
+              }
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Button 
+                onClick={handleTestEmail}
+                disabled={isTestingEmail}
+                className="w-full justify-start"
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                {isTestingEmail 
+                  ? (locale === 'es' ? 'Enviando...' : 'Sending...') 
+                  : (locale === 'es' ? 'Enviar Correo de Prueba' : 'Send Test Email')
+                }
+              </Button>
+              <p className="text-sm text-gray-600">
+                {locale === 'es'
+                  ? 'Se enviará un correo de bienvenida a tu dirección de correo registrada. Revisa tu bandeja de entrada y carpeta de spam.'
+                  : 'A welcome email will be sent to your registered email address. Check your inbox and spam folder.'
+                }
+              </p>
+            </div>
           </CardContent>
         </Card>
 
