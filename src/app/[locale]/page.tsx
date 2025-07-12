@@ -121,11 +121,11 @@ export default function HomePage() {
               <div className="flex items-center justify-center space-x-8 text-sm text-gray-500">
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span>Beta cerrada</span>
+                  <span>Beta abierta</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span>Acceso exclusivo</span>
+                  <span>Acceso Publico</span>
                 </div>
               </div>
             </div>

@@ -42,6 +42,26 @@
       "error": "An error occurred. Please try again."
     }
   },
+  "categories": {
+    "Food & Dining": "Food & Dining",
+    "Transportation": "Transportation",
+    "Entertainment": "Entertainment",
+    "Utilities": "Utilities",
+    "Shopping": "Shopping",
+    "Healthcare": "Healthcare",
+    "Education": "Education",
+    "Travel": "Travel",
+    "Groceries": "Groceries",
+    "Subscriptions": "Subscriptions",
+    "Rent/Mortgage": "Rent/Mortgage",
+    "Insurance": "Insurance",
+    "Other Expense": "Other Expense",
+    "Salary": "Salary",
+    "Freelance": "Freelance",
+    "Other Income": "Other Income",
+    "Savings": "Savings",
+    "Investment": "Investment"
+  },
   "common": {
     "save": "Save",
     "cancel": "Cancel",

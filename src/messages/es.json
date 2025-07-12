@@ -42,6 +42,26 @@
       "error": "Ocurrió un error. Inténtalo de nuevo."
     }
   },
+  "categories": {
+    "Food & Dining": "Comida y Cenas",
+    "Transportation": "Transporte",
+    "Entertainment": "Entretenimiento",
+    "Utilities": "Servicios Públicos",
+    "Shopping": "Compras",
+    "Healthcare": "Salud",
+    "Education": "Educación",
+    "Travel": "Viajes",
+    "Groceries": "Supermercado",
+    "Subscriptions": "Suscripciones",
+    "Rent/Mortgage": "Arriendo/Hipoteca",
+    "Insurance": "Seguros",
+    "Other Expense": "Otros Gastos",
+    "Salary": "Salario",
+    "Freelance": "Trabajo Independiente",
+    "Other Income": "Otros Ingresos",
+    "Savings": "Ahorros",
+    "Investment": "Inversión"
+  },
   "common": {
     "save": "Guardar",
     "cancel": "Cancelar",
