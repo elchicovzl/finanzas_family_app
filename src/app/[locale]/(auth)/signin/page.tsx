@@ -4,12 +4,14 @@ import { useState, useEffect, Suspense } from 'react'
 import { signIn, getSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
+import { useTranslations } from '@/hooks/use-translations'
 
 function SignInForm() {
   const [email, setEmail] = useState('')
@@ -18,6 +20,7 @@ function SignInForm() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { t } = useTranslations()
   
   const callbackUrl = searchParams.get('callbackUrl')
   const message = searchParams.get('message')
@@ -35,7 +38,7 @@ function SignInForm() {
       })
 
       if (result?.error) {
-        setError('Invalid credentials')
+        setError(t('auth.signin.invalidCredentials'))
       } else {
         const session = await getSession()
         if (session) {
@@ -47,7 +50,7 @@ function SignInForm() {
         }
       }
     } catch (error) {
-      setError('An error occurred. Please try again.')
+      setError(t('auth.signin.error'))
     } finally {
       setLoading(false)
     }
@@ -61,7 +64,7 @@ function SignInForm() {
         callbackUrl: callbackUrl || '/dashboard'
       })
     } catch (error) {
-      setError('An error occurred with Google sign in.')
+      setError(t('auth.signin.error'))
       setLoading(false)
     }
   }
@@ -69,9 +72,20 @@ function SignInForm() {
   return (
     <Card>
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl text-center">Sign in</CardTitle>
+        <div className="flex justify-center mb-4">
+          <Link href="/">
+            <Image
+              src="/logo.png"
+              alt="FamFinz Logo"
+              width={120}
+              height={40}
+              className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity"
+            />
+          </Link>
+        </div>
+        <CardTitle className="text-2xl text-center">{t('auth.signin.title')}</CardTitle>
         <CardDescription className="text-center">
-          Enter your email and password to sign in to your account
+          {t('auth.signin.description')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -112,7 +126,7 @@ function SignInForm() {
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
             />
           </svg>
-          Continue with Google
+          {t('auth.signin.googleButton')}
         </Button>
 
         <div className="relative">
@@ -121,7 +135,7 @@ function SignInForm() {
           </div>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-background px-2 text-muted-foreground">
-              Or continue with email
+              {t('auth.signin.orContinue')}
             </span>
           </div>
         </div>
@@ -129,18 +143,18 @@ function SignInForm() {
         {/* Email/Password Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('auth.signin.email')}</Label>
             <Input
               id="email"
               type="email"
-              placeholder="m@example.com"
+              placeholder={t('auth.signin.emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t('auth.signin.password')}</Label>
             <Input
               id="password"
               type="password"
@@ -150,18 +164,18 @@ function SignInForm() {
             />
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign in with Email'}
+            {loading ? t('auth.signin.signingIn') : t('auth.signin.signInButton')}
           </Button>
         </form>
       </CardContent>
       <CardFooter>
         <div className="text-sm text-center w-full">
-          Don&apos;t have an account?{' '}
+          {t('auth.signin.noAccount')}{' '}
           <Link 
             href={callbackUrl ? `/signup?callbackUrl=${encodeURIComponent(callbackUrl)}` : '/signup'} 
             className="text-blue-600 hover:underline"
           >
-            Sign up
+            {t('auth.signin.signUp')}
           </Link>
         </div>
       </CardFooter>

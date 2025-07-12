@@ -151,9 +151,9 @@ export function FamilySelector() {
     <div className="flex items-center space-x-3">
       {/* Family Selector */}
       <div className="flex items-center space-x-2">
-        <Users className="h-4 w-4 text-muted-foreground" />
+        <Users className="hidden sm:block h-4 w-4 text-muted-foreground" />
         <Select value={currentFamily.id} onValueChange={switchFamily}>
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="w-[140px] sm:w-[180px] md:w-[200px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -174,8 +174,8 @@ export function FamilySelector() {
         </Select>
       </div>
 
-      {/* Member Count */}
-      <Badge variant="outline">
+      {/* Member Count - Hidden on mobile */}
+      <Badge variant="outline" className="hidden sm:inline-flex">
         {currentFamily.memberCount} member{currentFamily.memberCount !== 1 ? 's' : ''}
       </Badge>
 
