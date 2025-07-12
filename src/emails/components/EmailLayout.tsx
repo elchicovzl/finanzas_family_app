@@ -39,7 +39,7 @@ export default function EmailLayout({ title, children, previewText }: EmailLayou
           {/* Header with Logo */}
           <Section style={header}>
             <Img
-              src={`${process.env.NEXTAUTH_URL || 'https://famfinz.vercel.app'}/logo.png`}
+              src={`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/logo.png`}
               width={120}
               height={48}
               alt="FamFinz"
@@ -58,7 +58,7 @@ export default function EmailLayout({ title, children, previewText }: EmailLayou
           <Section style={footer}>
             <Text style={footerText}>
               Este correo fue enviado desde{' '}
-              <Link href={process.env.NEXTAUTH_URL || 'https://famfinz.vercel.app'} style={link}>
+              <Link href={process.env.NEXTAUTH_URL || 'http://localhost:3000'} style={link}>
                 FamFinz
               </Link>
             </Text>

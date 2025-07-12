@@ -66,7 +66,13 @@ export async function POST(request: NextRequest) {
     })
 
     // Send welcome email asynchronously (don't block the response)
-    const loginUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/es/signin`
+    const loginUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/signin`
+    
+    console.log('=== REGISTRATION EMAIL TRIGGER ===')
+    console.log('Sending welcome email to:', email)
+    console.log('User name:', name)
+    console.log('Login URL:', loginUrl)
+    console.log('===================================')
     
     sendWelcomeEmail({
       to: email,
@@ -74,7 +80,8 @@ export async function POST(request: NextRequest) {
       isGoogleSignup: false,
       loginUrl
     }).catch(error => {
-      console.error('Failed to send welcome email:', error)
+      console.error('❌ Failed to send welcome email:', error)
+      console.error('❌ Error details:', JSON.stringify(error, null, 2))
       // Don't fail the registration if email fails
     })
 
