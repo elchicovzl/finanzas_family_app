@@ -150,7 +150,48 @@
     "foodDining": "Food & Dining",
     "transportation": "Transportation",
     "entertainment": "Entertainment",
-    "utilities": "Utilities"
+    "utilities": "Utilities",
+    "modal": {
+      "title": "Add Manual Transaction",
+      "description": "Add a cash transaction or expense not tracked by your bank",
+      "form": {
+        "description": "Description",
+        "descriptionPlaceholder": "e.g., Coffee at Starbucks",
+        "amount": "Amount (COP)",
+        "amountPlaceholder": "50,000",
+        "type": "Type",
+        "typePlaceholder": "Select type",
+        "category": "Category",
+        "categoryPlaceholder": "Select category",
+        "customCategory": "Or Custom Category",
+        "customCategoryPlaceholder": "Custom category name",
+        "date": "Date",
+        "reference": "Reference (Optional)",
+        "referencePlaceholder": "Receipt number, notes, etc.",
+        "tags": "Tags (Optional)",
+        "tagsPlaceholder": "Comma separated"
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "adding": "Adding...",
+        "addTransaction": "Add Transaction"
+      },
+      "validation": {
+        "categoryRequired": "Category required",
+        "categoryRequiredDesc": "Please select a category or enter a custom category name."
+      },
+      "success": {
+        "transactionAdded": "Transaction added successfully!",
+        "incomeRecorded": "Income of {amount} recorded.",
+        "expenseRecorded": "Expense of {amount} recorded."
+      },
+      "error": {
+        "failedToAdd": "Failed to add transaction",
+        "tryAgain": "Please try again.",
+        "connectionError": "Connection error",
+        "checkConnection": "Unable to connect to server. Please check your internet connection."
+      }
+    }
   },
   "budget": {
     "title": "Budget Management",

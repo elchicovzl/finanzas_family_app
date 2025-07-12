@@ -150,7 +150,48 @@
     "foodDining": "Comida y Restaurantes",
     "transportation": "Transporte",
     "entertainment": "Entretenimiento",
-    "utilities": "Servicios Públicos"
+    "utilities": "Servicios Públicos",
+    "modal": {
+      "title": "Agregar Transacción Manual",
+      "description": "Agrega una transacción en efectivo o gasto no rastreado por tu banco",
+      "form": {
+        "description": "Descripción",
+        "descriptionPlaceholder": "ej., Café en Starbucks",
+        "amount": "Monto (COP)",
+        "amountPlaceholder": "50,000",
+        "type": "Tipo",
+        "typePlaceholder": "Seleccionar tipo",
+        "category": "Categoría",
+        "categoryPlaceholder": "Seleccionar categoría",
+        "customCategory": "O Categoría Personalizada",
+        "customCategoryPlaceholder": "Nombre de categoría personalizada",
+        "date": "Fecha",
+        "reference": "Referencia (Opcional)",
+        "referencePlaceholder": "Número de recibo, notas, etc.",
+        "tags": "Etiquetas (Opcional)",
+        "tagsPlaceholder": "Separadas por comas"
+      },
+      "buttons": {
+        "cancel": "Cancelar",
+        "adding": "Agregando...",
+        "addTransaction": "Agregar Transacción"
+      },
+      "validation": {
+        "categoryRequired": "Categoría requerida",
+        "categoryRequiredDesc": "Por favor selecciona una categoría o ingresa un nombre de categoría personalizada."
+      },
+      "success": {
+        "transactionAdded": "¡Transacción agregada exitosamente!",
+        "incomeRecorded": "Ingreso de {amount} registrado.",
+        "expenseRecorded": "Gasto de {amount} registrado."
+      },
+      "error": {
+        "failedToAdd": "Error al agregar transacción",
+        "tryAgain": "Por favor inténtalo de nuevo.",
+        "connectionError": "Error de conexión",
+        "checkConnection": "No se pudo conectar al servidor. Por favor verifica tu conexión a internet."
+      }
+    }
   },
   "budget": {
     "title": "Gestión de Presupuestos",

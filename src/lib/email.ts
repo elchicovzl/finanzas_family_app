@@ -1,15 +1,19 @@
-import nodemailer from 'nodemailer'
-import { generateInvitationEmail, generateReminderEmail, formatDate, type Locale } from './email-templates'
+import { Resend } from 'resend'
+import { render } from '@react-email/render'
+import FamilyInvitationEmail from '@/emails/templates/FamilyInvitationEmail'
+import ReminderEmail from '@/emails/templates/ReminderEmail'
+import WelcomeEmail from '@/emails/templates/WelcomeEmail'
 
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_SERVER_HOST,
-  port: parseInt(process.env.EMAIL_SERVER_PORT || '587'),
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.EMAIL_SERVER_USER,
-    pass: process.env.EMAIL_SERVER_PASSWORD
-  }
-})
+const resend = new Resend(process.env.RESEND_API_KEY)
+
+// Fallback to configured domain or default
+const getEmailDomain = () => {
+  return process.env.EMAIL_DOMAIN || 'finanzasapp.com'
+}
+
+const getFromEmail = () => {
+  return process.env.EMAIL_FROM || `FamFinz <noreply@${getEmailDomain()}>`
+}
 
 interface SendInvitationEmailParams {
   to: string
@@ -17,7 +21,6 @@ interface SendInvitationEmailParams {
   invitedByName: string
   invitationUrl: string
   expiresAt: Date
-  locale?: Locale
 }
 
 interface SendReminderEmailParams {
@@ -32,10 +35,16 @@ interface SendReminderEmailParams {
   isRecurring: boolean
   category?: {
     name: string
-    icon: string
-    color: string
+    icon?: string
+    color?: string
   }
-  locale?: Locale
+}
+
+interface SendWelcomeEmailParams {
+  to: string
+  userName: string
+  isGoogleSignup?: boolean
+  loginUrl: string
 }
 
 export async function sendInvitationEmail({
@@ -43,49 +52,46 @@ export async function sendInvitationEmail({
   familyName,
   invitedByName,
   invitationUrl,
-  expiresAt,
-  locale = 'es'
+  expiresAt
 }: SendInvitationEmailParams) {
-  console.log('=== EMAIL DEBUG INFO ===')
-  console.log('EMAIL_SERVER_HOST:', process.env.EMAIL_SERVER_HOST)
-  console.log('EMAIL_SERVER_PORT:', process.env.EMAIL_SERVER_PORT)
-  console.log('EMAIL_SERVER_USER:', process.env.EMAIL_SERVER_USER)
-  console.log('EMAIL_FROM:', process.env.EMAIL_FROM)
+  console.log('=== RESEND EMAIL DEBUG INFO ===')
+  console.log('RESEND_API_KEY configured:', !!process.env.RESEND_API_KEY)
+  console.log('EMAIL_FROM:', getFromEmail())
   console.log('Sending email to:', to)
-  console.log('Locale:', locale)
-  console.log('========================')
+  console.log('===============================')
 
   try {
-    const expirationDate = formatDate(expiresAt, locale)
-    
-    const { subject, htmlContent, textContent } = await generateInvitationEmail(locale, {
+    const expirationDate = expiresAt.toLocaleDateString('es-CO', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      weekday: 'long'
+    })
+
+    const emailHtml = render(FamilyInvitationEmail({
       familyName,
       invitedByName,
       invitationUrl,
       expirationDate
+    }))
+
+    const { data, error } = await resend.emails.send({
+      from: getFromEmail(),
+      to: [to],
+      subject: `Invitación a la familia "${familyName}"`,
+      html: emailHtml,
     })
 
-    const mailOptions = {
-      from: process.env.EMAIL_FROM,
-      to,
-      subject,
-      html: htmlContent,
-      text: textContent
+    if (error) {
+      console.error('❌ Resend error:', error)
+      throw new Error(`Failed to send invitation email: ${error.message}`)
     }
 
-    console.log('Attempting to send email...')
-    const info = await transporter.sendMail(mailOptions)
     console.log('✅ Email sent successfully!')
-    console.log('Message ID:', info.messageId)
-    console.log('Response:', info.response)
-    return { success: true, messageId: info.messageId }
+    console.log('Message ID:', data?.id)
+    return { success: true, messageId: data?.id }
   } catch (error) {
     console.error('❌ Error sending email:', error)
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      code: (error as any)?.code,
-      command: (error as any)?.command
-    })
     throw new Error('Failed to send invitation email')
   }
 }
@@ -100,51 +106,104 @@ export async function sendReminderEmail({
   daysUntilDue,
   priority,
   isRecurring,
-  category,
-  locale = 'es'
+  category
 }: SendReminderEmailParams) {
   console.log('=== REMINDER EMAIL DEBUG INFO ===')
   console.log('Sending reminder email to:', to)
   console.log('Reminder:', reminderTitle)
   console.log('Days until due:', daysUntilDue)
-  console.log('Locale:', locale)
   console.log('==================================')
 
   try {
-    const formattedDueDate = dueDate.toLocaleDateString(locale === 'es' ? 'es-CO' : 'en-US', {
+    const formattedDueDate = dueDate.toLocaleDateString('es-CO', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
       weekday: 'long'
     })
 
-    const { subject, htmlContent, textContent } = await generateReminderEmail(locale, {
-      reminderTitle,
-      familyName,
-      reminderDescription,
-      amount,
-      formattedDueDate,
-      daysUntilDue,
-      priority,
-      isRecurring,
-      category
-    })
+    const isOverdue = daysUntilDue < 0
+    const daysDifference = Math.abs(daysUntilDue)
 
-    const mailOptions = {
-      from: process.env.EMAIL_FROM,
-      to,
-      subject,
-      html: htmlContent,
-      text: textContent
+    const emailHtml = render(ReminderEmail({
+      reminderTitle,
+      dueDate: formattedDueDate,
+      priority,
+      amount,
+      category: category?.name,
+      familyName,
+      isRecurring,
+      isOverdue,
+      daysDifference
+    }))
+
+    // Generate subject based on urgency
+    let subject = `📅 Recordatorio: ${reminderTitle}`
+    if (isOverdue) {
+      subject = `🔔 Recordatorio: ${reminderTitle} (fecha pasada)`
+    } else if (daysUntilDue === 0) {
+      subject = `⚠️ Recordatorio para HOY: ${reminderTitle}`
+    } else if (daysUntilDue === 1) {
+      subject = `⏰ Recordatorio para MAÑANA: ${reminderTitle}`
     }
 
-    console.log('Attempting to send reminder email...')
-    const info = await transporter.sendMail(mailOptions)
+    const { data, error } = await resend.emails.send({
+      from: getFromEmail(),
+      to: [to],
+      subject,
+      html: emailHtml,
+    })
+
+    if (error) {
+      console.error('❌ Resend error:', error)
+      throw new Error(`Failed to send reminder email: ${error.message}`)
+    }
+
     console.log('✅ Reminder email sent successfully!')
-    console.log('Message ID:', info.messageId)
-    return { success: true, messageId: info.messageId }
+    console.log('Message ID:', data?.id)
+    return { success: true, messageId: data?.id }
   } catch (error) {
     console.error('❌ Error sending reminder email:', error)
     throw new Error('Failed to send reminder email')
+  }
+}
+
+export async function sendWelcomeEmail({
+  to,
+  userName,
+  isGoogleSignup = false,
+  loginUrl
+}: SendWelcomeEmailParams) {
+  console.log('=== WELCOME EMAIL DEBUG INFO ===')
+  console.log('Sending welcome email to:', to)
+  console.log('User name:', userName)
+  console.log('Google signup:', isGoogleSignup)
+  console.log('=================================')
+
+  try {
+    const emailHtml = render(WelcomeEmail({
+      userName,
+      isGoogleSignup,
+      loginUrl
+    }))
+
+    const { data, error } = await resend.emails.send({
+      from: getFromEmail(),
+      to: [to],
+      subject: '¡Bienvenido a FamFinz! 🎉',
+      html: emailHtml,
+    })
+
+    if (error) {
+      console.error('❌ Resend error:', error)
+      throw new Error(`Failed to send welcome email: ${error.message}`)
+    }
+
+    console.log('✅ Welcome email sent successfully!')
+    console.log('Message ID:', data?.id)
+    return { success: true, messageId: data?.id }
+  } catch (error) {
+    console.error('❌ Error sending welcome email:', error)
+    throw new Error('Failed to send welcome email')
   }
 }

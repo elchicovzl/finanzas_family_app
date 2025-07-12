@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
         // Check if budget already exists for this period
         const existingBudget = await prisma.budget.findFirst({
           where: {
-            userId: template.userId,
+            familyId: template.familyId,
             categoryId: template.categoryId,
             startDate: {
               gte: currentMonthStart,
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
           results.push({
             templateId: template.id,
             templateName: template.name,
-            userId: template.userId,
+            familyId: template.familyId,
             status: 'skipped',
             reason: 'Budget already exists'
           })
@@ -61,7 +61,8 @@ export async function GET(request: NextRequest) {
         // Create budget from template
         const budget = await prisma.budget.create({
           data: {
-            userId: template.userId,
+            familyId: template.familyId,
+            createdByUserId: template.createdByUserId,
             categoryId: template.categoryId,
             name: template.name,
             monthlyLimit: template.monthlyLimit,
@@ -83,7 +84,7 @@ export async function GET(request: NextRequest) {
         results.push({
           templateId: template.id,
           templateName: template.name,
-          userId: template.userId,
+          familyId: template.familyId,
           budgetId: budget.id,
           status: 'generated',
           amount: Number(template.monthlyLimit)
@@ -97,7 +98,7 @@ export async function GET(request: NextRequest) {
         results.push({
           templateId: template.id,
           templateName: template.name,
-          userId: template.userId,
+          familyId: template.familyId,
           status: 'error',
           reason: error instanceof Error ? error.message : 'Unknown error'
         })
