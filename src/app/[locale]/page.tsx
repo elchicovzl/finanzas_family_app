@@ -63,16 +63,16 @@ export default function HomePage() {
               />
             </div>
             <nav className="hidden md:flex space-x-8">
-              <Link href="#caracteristicas" className="text-gray-600 hover:text-blue-600 transition-colors">
+              <Link href="#caracteristicas" className="text-gray-600 hover:text-primary transition-colors">
                 Características
               </Link>
-              <Link href="#testimonios" className="text-gray-600 hover:text-blue-600 transition-colors">
+              <Link href="#testimonios" className="text-gray-600 hover:text-primary transition-colors">
                 Testimonios
               </Link>
-              <Link href="#precios" className="text-gray-600 hover:text-blue-600 transition-colors">
+              <Link href="#precios" className="text-gray-600 hover:text-primary transition-colors">
                 Precios
               </Link>
-              <Link href="#faq" className="text-gray-600 hover:text-blue-600 transition-colors">
+              <Link href="#faq" className="text-gray-600 hover:text-primary transition-colors">
                 FAQ
               </Link>
             </nav>
@@ -83,7 +83,7 @@ export default function HomePage() {
                 </Button>
               </Link>
               <Link href="/signup">
-                <Button className="bg-blue-600 hover:bg-blue-700">Comenzar Gratis</Button>
+                <Button>Comenzar Gratis</Button>
               </Link>
             </div>
           </div>
@@ -91,7 +91,7 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-blue-50 via-white to-green-50 py-20 lg:py-32">
+      <section className="relative bg-gradient-to-br from-primary/5 via-white to-emerald-50 py-20 lg:py-32">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
@@ -101,7 +101,7 @@ export default function HomePage() {
                 </Badge>
                 <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight">
                   Gestiona las finanzas de tu familia{" "}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-green-500">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-500">
                     juntos
                   </span>
                 </h1>
@@ -112,7 +112,7 @@ export default function HomePage() {
               </div>
               <div className="flex justify-center">
                 <Link href="/signup">
-                  <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-4">
+                  <Button size="lg" className="text-lg px-8 py-4">
                     Comienza tu gestión familiar
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Button>
@@ -131,9 +131,9 @@ export default function HomePage() {
             </div>
             <div className="relative">
               <div className="relative z-10">
-                <div className="w-full h-96 bg-gradient-to-br from-blue-100 to-green-100 rounded-2xl shadow-2xl flex items-center justify-center">
+                <div className="w-full h-96 bg-gradient-to-br from-primary/10 to-emerald-100 rounded-2xl shadow-2xl flex items-center justify-center">
                   <div className="text-center">
-                    <DollarSign className="w-24 h-24 text-blue-600 mx-auto mb-4" />
+                    <DollarSign className="w-24 h-24 text-primary mx-auto mb-4" />
                     <p className="text-gray-600 text-lg">Dashboard Preview</p>
                   </div>
                 </div>
@@ -162,8 +162,8 @@ export default function HomePage() {
             {/* Gestión Familiar */}
             <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
               <CardHeader>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                  <Users className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
+                  <Users className="w-6 h-6 text-primary" />
                 </div>
                 <CardTitle className="text-xl">Gestión Familiar Colaborativa</CardTitle>
                 <CardDescription className="text-base">
@@ -350,8 +350,8 @@ export default function HomePage() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
               <div className="flex items-start space-x-4">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  <CheckCircle className="w-5 h-5 text-blue-600" />
+                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <CheckCircle className="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -409,9 +409,9 @@ export default function HomePage() {
             </div>
 
             <div className="relative">
-              <div className="w-full h-80 bg-gradient-to-br from-green-100 to-blue-100 rounded-2xl shadow-xl flex items-center justify-center">
+              <div className="w-full h-80 bg-gradient-to-br from-emerald-100 to-primary/10 rounded-2xl shadow-xl flex items-center justify-center">
                 <div className="text-center">
-                  <Users className="w-20 h-20 text-green-600 mx-auto mb-4" />
+                  <Users className="w-20 h-20 text-emerald-600 mx-auto mb-4" />
                   <p className="text-gray-600 text-lg">Dashboard Familiar</p>
                 </div>
               </div>
@@ -490,18 +490,18 @@ export default function HomePage() {
       </section>
 
       {/* CTA Final */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-green-500">
+      <section className="py-20 bg-gradient-to-r from-primary to-emerald-500">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-3xl lg:text-4xl font-bold text-white mb-6">
               Comienza a gestionar las finanzas de tu familia hoy
             </h2>
-            <p className="text-xl text-blue-100 mb-8">
+            <p className="text-xl text-primary-foreground/80 mb-8">
               Únete a miles de familias colombianas que ya están tomando control de sus finanzas de manera colaborativa
             </p>
             <div className="flex justify-center">
               <Link href="/signup">
-                <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 text-lg px-8 py-4">
+                <Button size="lg" variant="secondary" className="text-lg px-8 py-4">
                   Invita a tu familia hoy
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
