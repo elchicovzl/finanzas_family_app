@@ -68,7 +68,7 @@ export async function sendInvitationEmail({
       weekday: 'long'
     })
 
-    const emailHtml = render(FamilyInvitationEmail({
+    const emailHtml = await render(FamilyInvitationEmail({
       familyName,
       invitedByName,
       invitationUrl,
@@ -125,7 +125,7 @@ export async function sendReminderEmail({
     const isOverdue = daysUntilDue < 0
     const daysDifference = Math.abs(daysUntilDue)
 
-    const emailHtml = render(ReminderEmail({
+    const emailHtml = await render(ReminderEmail({
       reminderTitle,
       dueDate: formattedDueDate,
       priority,
@@ -181,11 +181,20 @@ export async function sendWelcomeEmail({
   console.log('=================================')
 
   try {
-    const emailHtml = render(WelcomeEmail({
+    // Render the React component to HTML string
+    const emailHtml = await render(WelcomeEmail({
       userName,
       isGoogleSignup,
       loginUrl
     }))
+
+    console.log('Email HTML type:', typeof emailHtml)
+    console.log('Email HTML length:', emailHtml?.length || 0)
+
+    // Ensure emailHtml is a string
+    if (typeof emailHtml !== 'string') {
+      throw new Error('Email HTML rendering failed - not a string')
+    }
 
     const { data, error } = await resend.emails.send({
       from: getFromEmail(),
