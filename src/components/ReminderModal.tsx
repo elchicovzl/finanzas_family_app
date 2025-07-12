@@ -16,6 +16,8 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { useTranslations } from '@/hooks/use-translations'
+import { translateCategories } from '@/lib/category-translations'
 
 interface Category {
   id: string
@@ -62,6 +64,7 @@ interface ReminderModalProps {
 }
 
 export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder, selectedDate }: ReminderModalProps) {
+  const { t } = useTranslations()
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState<ReminderFormData>({
@@ -80,7 +83,7 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
 
   useEffect(() => {
     fetchCategories()
-  }, [])
+  }, [t])
 
   useEffect(() => {
     if (editingReminder) {
@@ -121,7 +124,8 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
       const response = await fetch('/api/categories')
       if (response.ok) {
         const data = await response.json()
-        setCategories(data)
+        const translatedCategories = translateCategories(data, t)
+        setCategories(translatedCategories)
       }
     } catch (error) {
       console.error('Error fetching categories:', error)

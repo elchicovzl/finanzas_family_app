@@ -19,11 +19,29 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validatedData = generateBudgetSchema.parse(body)
 
+    // Get user's current family
+    const userFamilyMember = await prisma.familyMember.findFirst({
+      where: {
+        userId: session.user.id,
+        isActive: true
+      },
+      include: {
+        family: true
+      }
+    })
+
+    if (!userFamilyMember) {
+      return NextResponse.json(
+        { error: 'User is not part of any active family' },
+        { status: 403 }
+      )
+    }
+
     // Find the template
     const template = await prisma.budgetTemplate.findFirst({
       where: {
         id: validatedData.templateId,
-        userId: session.user.id,
+        familyId: userFamilyMember.familyId,
         isActive: true
       }
     })
@@ -62,7 +80,7 @@ export async function POST(request: NextRequest) {
     // Check if budget already exists for this period
     const existingBudget = await prisma.budget.findFirst({
       where: {
-        userId: session.user.id,
+        familyId: userFamilyMember.familyId,
         categoryId: template.categoryId,
         startDate: {
           gte: startDate,
@@ -81,7 +99,7 @@ export async function POST(request: NextRequest) {
     // Create the budget from template
     const budget = await prisma.budget.create({
       data: {
-        userId: session.user.id,
+        familyId: userFamilyMember.familyId,
         categoryId: template.categoryId,
         name: template.name,
         monthlyLimit: template.monthlyLimit,
@@ -89,7 +107,8 @@ export async function POST(request: NextRequest) {
         startDate: startDate,
         endDate: endDate,
         alertThreshold: template.alertThreshold,
-        templateId: template.id
+        templateId: template.id,
+        createdByUserId: session.user.id
       },
       include: {
         category: {

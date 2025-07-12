@@ -22,6 +22,7 @@ import { Plus, Target, AlertTriangle, CheckCircle, TrendingUp, LayoutTemplate, P
 import { toast } from 'sonner'
 import { useFamilyStore } from '@/stores/family-store'
 import { useTranslations } from '@/hooks/use-translations'
+import { translateCategories } from '@/lib/category-translations'
 
 interface Budget {
   id: string
@@ -126,7 +127,8 @@ export default function BudgetPage() {
       const response = await fetch('/api/categories')
       if (response.ok) {
         const data = await response.json()
-        setCategories(data)
+        const translatedCategories = translateCategories(data, t)
+        setCategories(translatedCategories)
       }
     } catch (error) {
       console.error('Error fetching categories:', error)
@@ -164,7 +166,7 @@ export default function BudgetPage() {
       setLoading(false)
     }
     loadData()
-  }, [])
+  }, [t])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

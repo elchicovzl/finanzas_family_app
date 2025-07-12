@@ -16,6 +16,7 @@ import {
 import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from '@/hooks/use-translations'
+import { translateCategories } from '@/lib/category-translations'
 
 interface Category {
   id: string
@@ -61,7 +62,8 @@ export default function AddTransactionModal({
       const response = await fetch('/api/categories')
       if (response.ok) {
         const data = await response.json()
-        setCategories(data)
+        const translatedCategories = translateCategories(data, t)
+        setCategories(translatedCategories)
       }
     } catch (error) {
       console.error('Error fetching categories:', error)
@@ -70,7 +72,7 @@ export default function AddTransactionModal({
 
   useEffect(() => {
     fetchCategories()
-  }, [])
+  }, [t])
 
   const resetForm = () => {
     setFormData({
