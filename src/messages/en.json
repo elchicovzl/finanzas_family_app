@@ -253,7 +253,13 @@
     "monthlyLimitPlaceholder": "$500,000",
     "alertThresholdPercent": "Alert Threshold (%)",
     "autoGenerateMonthly": "Auto-generate monthly budgets",
-    "templates": "Templates",
+    "templates": {
+      "title": "Templates",
+      "running": "Running",
+      "auto": "Auto",
+      "generate": "Generate",
+      "generateDisabled": "Already Running"
+    },
     "totalBudget": "Total Budget",
     "totalSpent": "Total Spent",
     "totalRemaining": "Remaining",

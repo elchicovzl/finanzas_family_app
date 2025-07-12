@@ -253,7 +253,13 @@
     "monthlyLimitPlaceholder": "$500,000",
     "alertThresholdPercent": "Umbral de Alerta (%)",
     "autoGenerateMonthly": "Generar presupuestos mensuales automáticamente",
-    "templates": "Plantillas",
+    "templates": {
+      "title": "Plantillas",
+      "running": "Ejecutándose",
+      "auto": "Auto",
+      "generate": "Generar",
+      "generateDisabled": "Ya Ejecutándose"
+    },
     "totalBudget": "Presupuesto Total",
     "totalSpent": "Total Gastado",
     "totalRemaining": "Restante",

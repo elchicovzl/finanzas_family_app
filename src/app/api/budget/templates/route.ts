@@ -38,6 +38,31 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    // Get current month boundaries to check for running budgets
+    const now = new Date()
+    const startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+    const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+
+    // Get all active budgets for current period to check which templates are running
+    const activeBudgets = await prisma.budget.findMany({
+      where: {
+        familyId: familyContext.family.id,
+        startDate: {
+          gte: startDate,
+          lte: endDate
+        }
+      },
+      select: {
+        categoryId: true,
+        templateId: true
+      }
+    })
+
+    const runningTemplateIds = new Set(activeBudgets
+      .filter(budget => budget.templateId)
+      .map(budget => budget.templateId)
+    )
+
     const formattedTemplates = templates.map(template => ({
       id: template.id,
       name: template.name,
@@ -46,6 +71,7 @@ export async function GET(request: NextRequest) {
       alertThreshold: template.alertThreshold ? Number(template.alertThreshold) : 80,
       autoGenerate: template.autoGenerate,
       lastGenerated: template.lastGenerated,
+      isRunning: runningTemplateIds.has(template.id),
       formattedLimit: new Intl.NumberFormat('es-CO', {
         style: 'currency',
         currency: 'COP'
