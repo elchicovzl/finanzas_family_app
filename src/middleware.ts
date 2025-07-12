@@ -34,11 +34,11 @@ export default function middleware(request: NextRequest) {
   // CSP (Content Security Policy)
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://datafa.st",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https: blob:",
-    "connect-src 'self' https://api.belvo.com https://*.vercel.app",
+    "connect-src 'self' https://api.belvo.com https://*.vercel.app https://datafa.st",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'"
