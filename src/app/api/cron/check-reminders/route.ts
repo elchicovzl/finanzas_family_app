@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { sendReminderEmail } from '@/lib/email'
+import { EmailJobType, EmailJobStatus } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   try {
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
 
     console.log(`📋 Found ${remindersToNotify.length} reminders to process`)
 
-    let emailsSent = 0
+    let emailJobsCreated = 0
     let errors = 0
 
     for (const reminder of remindersToNotify) {
@@ -111,29 +111,58 @@ export async function GET(request: NextRequest) {
         console.log(`   Days until due: ${daysUntilDue}`)
         console.log(`   Family members: ${reminder.family.members.length}`)
 
-        // Send email to all active family members
-        // For now, we'll use Spanish as default since the app is primarily for Colombian users
-        // In the future, this could be determined by user preferences
+        // Create email jobs for all active family members
         for (const member of reminder.family.members) {
           try {
-            await sendReminderEmail({
-              to: member.user.email,
-              familyName: reminder.family.name,
-              reminderTitle: reminder.title,
-              reminderDescription: reminder.description || undefined,
-              amount: reminder.amount ? Number(reminder.amount) : undefined,
-              dueDate: reminder.dueDate,
-              daysUntilDue,
-              priority: reminder.priority as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT',
-              isRecurring: reminder.isRecurring,
-              category: reminder.category || undefined,
-              locale: 'es' // Default to Spanish for Colombian users
+            // Check if we already have a pending email job for this reminder and user today
+            const existingJob = await prisma.emailJob.findFirst({
+              where: {
+                type: EmailJobType.REMINDER_EMAIL,
+                to: member.user.email,
+                status: {
+                  in: [EmailJobStatus.PENDING, EmailJobStatus.PROCESSING]
+                },
+                createdAt: {
+                  gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()) // Today
+                },
+                data: {
+                  path: ['reminderId'],
+                  equals: reminder.id
+                }
+              }
             })
 
-            emailsSent++
-            console.log(`   ✅ Email sent to ${member.user.email}`)
+            if (existingJob) {
+              console.log(`   ⏭️  Skipping ${member.user.email} - email job already exists (ID: ${existingJob.id})`)
+              continue
+            }
+
+            // Create email job
+            await prisma.emailJob.create({
+              data: {
+                type: EmailJobType.REMINDER_EMAIL,
+                to: member.user.email,
+                status: EmailJobStatus.PENDING,
+                data: {
+                  reminderId: reminder.id,
+                  familyName: reminder.family.name,
+                  reminderTitle: reminder.title,
+                  reminderDescription: reminder.description || undefined,
+                  amount: reminder.amount ? Number(reminder.amount) : undefined,
+                  dueDate: reminder.dueDate.toISOString(),
+                  daysUntilDue,
+                  priority: reminder.priority,
+                  isRecurring: reminder.isRecurring,
+                  category: reminder.category || undefined
+                },
+                attempts: 0
+              }
+            })
+
+            emailJobsCreated++
+            console.log(`   ✅ Email job created for ${member.user.email}`)
           } catch (emailError) {
-            console.error(`   ❌ Failed to send email to ${member.user.email}:`, emailError)
+            console.error(`   ❌ Failed to create email job for ${member.user.email}:`, emailError)
             errors++
           }
         }
@@ -167,7 +196,7 @@ export async function GET(request: NextRequest) {
     const summary = {
       timestamp: now.toISOString(),
       remindersProcessed: remindersToNotify.length,
-      emailsSent,
+      emailJobsCreated,
       errors,
       success: true
     }

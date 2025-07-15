@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, Suspense } from 'react'
-import { signIn, getSession } from 'next-auth/react'
+import { useState, Suspense, useEffect } from 'react'
+import { signIn, useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -21,9 +21,31 @@ function SignInForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { t, locale } = useTranslations()
+  const { data: session, status } = useSession()
   
   const callbackUrl = searchParams.get('callbackUrl')
   const message = searchParams.get('message')
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (status === 'authenticated' && session) {
+      router.push(callbackUrl || '/dashboard')
+    }
+  }, [session, status, router, callbackUrl])
+
+  // Show loading while checking session
+  if (status === 'loading') {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    )
+  }
+
+  // Don't render form if already authenticated
+  if (status === 'authenticated') {
+    return null
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,13 +62,11 @@ function SignInForm() {
       if (result?.error) {
         setError(t('auth.signin.invalidCredentials'))
       } else {
-        const session = await getSession()
-        if (session) {
-          if (callbackUrl) {
-            router.push(callbackUrl)
-          } else {
-            router.push(`/${locale}/dashboard`)
-          }
+        // Redirect after successful login
+        if (callbackUrl) {
+          router.push(callbackUrl)
+        } else {
+          router.push(`/${locale}/dashboard`)
         }
       }
     } catch (err) {

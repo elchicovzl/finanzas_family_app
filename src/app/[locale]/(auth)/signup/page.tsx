@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
@@ -21,15 +22,37 @@ function SignUpForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { t } = useTranslations()
+  const { data: session, status } = useSession()
   
   const callbackUrl = searchParams.get('callbackUrl')
   const inviteEmail = searchParams.get('email')
+  
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (status === 'authenticated' && session) {
+      router.push(callbackUrl || '/dashboard')
+    }
+  }, [session, status, router, callbackUrl])
   
   useEffect(() => {
     if (inviteEmail) {
       setEmail(inviteEmail)
     }
   }, [inviteEmail])
+
+  // Show loading while checking session
+  if (status === 'loading') {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    )
+  }
+
+  // Don't render form if already authenticated
+  if (status === 'authenticated') {
+    return null
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

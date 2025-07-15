@@ -14,10 +14,14 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table'
-import { Search, Download, User } from 'lucide-react'
+import { Search, Download, User, Trash2 } from 'lucide-react'
 import AddTransactionModal from '@/components/AddTransactionModal'
 import { useFamilyStore } from '@/stores/family-store'
 import { useTranslations } from '@/hooks/use-translations'
+import { useSession } from 'next-auth/react'
+import { toast } from 'sonner'
+import { DeleteConfirmationModal } from '@/components/ui/delete-confirmation-modal'
+import { CategoryFilter } from '@/components/CategoryFilter'
 
 interface Transaction {
   id: string
@@ -28,6 +32,7 @@ interface Transaction {
   formattedDate: string
   type: 'INCOME' | 'EXPENSE' | 'TRANSFER'
   source?: 'BELVO' | 'MANUAL' | 'PLAID' | 'CSV_IMPORT'
+  createdByUserId?: string
   category?: {
     name: string
     color: string
@@ -56,9 +61,13 @@ interface TransactionResponse {
 
 export default function TransactionsPage() {
   const { currentFamily } = useFamilyStore()
+  const { data: session } = useSession()
   const { t, locale } = useTranslations()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set())
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null)
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
@@ -94,6 +103,63 @@ export default function TransactionsPage() {
   useEffect(() => {
     fetchTransactions()
   }, [currentPage, search, typeFilter, categoryFilter])
+
+  const handleDeleteClick = (transaction: Transaction) => {
+    setTransactionToDelete(transaction)
+    setDeleteModalOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!transactionToDelete) return
+
+    const transactionId = transactionToDelete.id
+    setDeletingIds(prev => new Set(prev).add(transactionId))
+
+    try {
+      const response = await fetch(`/api/transactions/${transactionId}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        toast.success(t('transactions.deleteSuccess'))
+        fetchTransactions() // Refresh the list
+        setDeleteModalOpen(false)
+        setTransactionToDelete(null)
+      } else {
+        const error = await response.json()
+        toast.error(error.error || t('transactions.deleteError'))
+      }
+    } catch (error) {
+      console.error('Error deleting transaction:', error)
+      toast.error(t('transactions.deleteError'))
+    } finally {
+      setDeletingIds(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(transactionId)
+        return newSet
+      })
+    }
+  }
+
+  const handleDeleteCancel = () => {
+    setDeleteModalOpen(false)
+    setTransactionToDelete(null)
+  }
+
+  const canDeleteTransaction = (transaction: Transaction) => {
+    if (!session?.user?.id) return false
+    
+    // User can delete if they are the creator
+    const isCreator = transaction.createdByUserId === session.user.id
+    
+    // Or if they are an admin
+    const isAdmin = currentFamily?.role === 'ADMIN'
+    
+    // And it's not an automatic transaction from Belvo
+    const isNotAutomatic = transaction.source !== 'BELVO'
+    
+    return (isCreator || isAdmin) && isNotAutomatic
+  }
 
   const formatCurrency = (amount: number) => {
     const localeCode = locale === 'es' ? 'es-CO' : 'en-US'
@@ -190,18 +256,11 @@ export default function TransactionsPage() {
                 <SelectItem value="TRANSFER">{t('transactions.transfer')}</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder={t('transactions.filterByCategory')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('transactions.allCategories')}</SelectItem>
-                <SelectItem value="food">{t('transactions.foodDining')}</SelectItem>
-                <SelectItem value="transport">{t('transactions.transportation')}</SelectItem>
-                <SelectItem value="entertainment">{t('transactions.entertainment')}</SelectItem>
-                <SelectItem value="utilities">{t('transactions.utilities')}</SelectItem>
-              </SelectContent>
-            </Select>
+            <CategoryFilter
+              value={categoryFilter}
+              onValueChange={setCategoryFilter}
+              className="w-[180px]"
+            />
           </div>
         </CardContent>
       </Card>
@@ -230,6 +289,7 @@ export default function TransactionsPage() {
                     <TableHead>{t('transactions.addedBy')}</TableHead>
                     <TableHead>{t('transactions.type')}</TableHead>
                     <TableHead className="text-right">{t('common.amount')}</TableHead>
+                    <TableHead className="text-right">{t('common.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -280,6 +340,23 @@ export default function TransactionsPage() {
                       <TableCell className={`text-right font-medium ${getAmountColor(transaction.type)}`}>
                         {formatCurrency(transaction.amount)}
                       </TableCell>
+                      <TableCell className="text-right">
+                        {canDeleteTransaction(transaction) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteClick(transaction)}
+                            disabled={deletingIds.has(transaction.id)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            {deletingIds.has(transaction.id) ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -316,6 +393,18 @@ export default function TransactionsPage() {
           )}
         </CardContent>
       </Card>
+
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title={t('transactions.deleteTransaction')}
+        description={t('transactions.confirmDelete')}
+        itemName={transactionToDelete?.description}
+        isLoading={transactionToDelete ? deletingIds.has(transactionToDelete.id) : false}
+        confirmText={t('common.delete')}
+        cancelText={t('common.cancel')}
+      />
     </div>
   )
 }

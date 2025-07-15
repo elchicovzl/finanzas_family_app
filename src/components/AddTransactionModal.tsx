@@ -16,14 +16,7 @@ import {
 import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from '@/hooks/use-translations'
-import { translateCategories } from '@/lib/category-translations'
-
-interface Category {
-  id: string
-  name: string
-  color: string
-  icon: string
-}
+import { CategoryFilter } from '@/components/CategoryFilter'
 
 interface AddTransactionModalProps {
   onTransactionAdded?: () => void
@@ -40,7 +33,6 @@ export default function AddTransactionModal({
 }: AddTransactionModalProps) {
   const { t } = useTranslations()
   const [internalOpen, setInternalOpen] = useState(false)
-  const [categories, setCategories] = useState<Category[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     amount: '',
@@ -57,22 +49,6 @@ export default function AddTransactionModal({
   const isOpen = controlledOpen !== undefined ? controlledOpen : internalOpen
   const setIsOpen = controlledOnOpenChange || setInternalOpen
 
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch('/api/categories')
-      if (response.ok) {
-        const data = await response.json()
-        const translatedCategories = translateCategories(data, t)
-        setCategories(translatedCategories)
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error)
-    }
-  }
-
-  useEffect(() => {
-    fetchCategories()
-  }, [t])
 
   const resetForm = () => {
     setFormData({
@@ -228,21 +204,12 @@ export default function AddTransactionModal({
           
           <div className="space-y-2">
             <Label htmlFor="category">{t('transactions.modal.form.category')}</Label>
-            <Select value={formData.categoryId} onValueChange={(value) => setFormData(prev => ({ ...prev, categoryId: value, customCategory: '' }))}>
-              <SelectTrigger>
-                <SelectValue placeholder={t('transactions.modal.form.categoryPlaceholder')} />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    <div className="flex items-center space-x-2">
-                      <span>{category.icon}</span>
-                      <span>{category.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <CategoryFilter
+              value={formData.categoryId}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, categoryId: value, customCategory: '' }))}
+              placeholder={t('transactions.modal.form.categoryPlaceholder')}
+              includeAllOption={false}
+            />
           </div>
           
           <div className="space-y-2">

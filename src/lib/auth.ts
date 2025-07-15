@@ -12,6 +12,8 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      // Allow account linking with same email
+      allowDangerousEmailAccountLinking: true,
     }),
     CredentialsProvider({
       name: 'credentials',
@@ -54,21 +56,29 @@ export const authOptions: NextAuthOptions = {
     signIn: '/signin',
   },
   callbacks: {
-    async signIn({ user, account, profile, isNewUser }) {
-      // Send welcome email for new Google users
-      if (isNewUser && account?.provider === 'google' && user.email && user.name) {
-        const loginUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/dashboard`
-        
-        // Create welcome email job asynchronously
-        createWelcomeEmailJob({
-          to: user.email,
-          userName: user.name,
-          isGoogleSignup: true,
-          loginUrl
-        }).catch(error => {
-          console.error('Failed to create welcome email job for Google signup:', error)
-          // Don't fail the signin if job creation fails
+    async signIn({ user, account }) {
+      // Check if this is a new Google user by looking for existing accounts
+      if (account?.provider === 'google' && user.email && user.name) {
+        const existingAccounts = await prisma.account.findMany({
+          where: { userId: user.id }
         })
+        
+        const isNewUser = existingAccounts.length === 1 // Only the Google account just created
+        
+        if (isNewUser) {
+          const loginUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/dashboard`
+          
+          // Create welcome email job asynchronously
+          createWelcomeEmailJob({
+            to: user.email,
+            userName: user.name,
+            isGoogleSignup: true,
+            loginUrl
+          }).catch(error => {
+            console.error('Failed to create welcome email job for Google signup:', error)
+            // Don't fail the signin if job creation fails
+          })
+        }
       }
       return true
     },
