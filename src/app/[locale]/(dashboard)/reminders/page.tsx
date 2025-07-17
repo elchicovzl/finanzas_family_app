@@ -101,9 +101,28 @@ export default function RemindersPage() {
   }, [locale])
 
   useEffect(() => {
-    // Detect mobile screen size
+    // Detect mobile device using User Agent and screen size
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
+      const userAgent = navigator.userAgent.toLowerCase()
+      const isMobileUserAgent = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent)
+      const isMobileScreen = window.innerWidth <= 768 || window.screen.width <= 768
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+      
+      // Consider it mobile if any of these conditions are true
+      const mobile = isMobileUserAgent || (isMobileScreen && isTouchDevice)
+      
+      // Debug info (remove in production)
+      console.log('Mobile detection:', {
+        userAgent: userAgent.substring(0, 50) + '...',
+        isMobileUserAgent,
+        isMobileScreen,
+        isTouchDevice,
+        windowWidth: window.innerWidth,
+        screenWidth: window.screen?.width,
+        finalMobile: mobile
+      })
+      
+      setIsMobile(mobile)
     }
     
     checkMobile()
@@ -371,54 +390,54 @@ export default function RemindersPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-        <Card>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
+        <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('reminders.total')}</CardTitle>
-            <List className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs sm:text-sm font-medium">{t('reminders.total')}</CardTitle>
+            <List className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.total}</div>
+            <div className="text-xl sm:text-2xl font-bold">{summary.total}</div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('reminders.completed')}</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
+            <CardTitle className="text-xs sm:text-sm font-medium">{t('reminders.completed')}</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{summary.completed}</div>
+            <div className="text-xl sm:text-2xl font-bold text-green-600">{summary.completed}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('reminders.pending')}</CardTitle>
-            <Clock className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-xs sm:text-sm font-medium">{t('reminders.pending')}</CardTitle>
+            <Clock className="h-4 w-4 text-blue-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{summary.pending}</div>
+            <div className="text-xl sm:text-2xl font-bold text-blue-600">{summary.pending}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('reminders.notified')}</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-600" />
+            <CardTitle className="text-xs sm:text-sm font-medium">{t('reminders.notified')}</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{summary.notified}</div>
+            <div className="text-xl sm:text-2xl font-bold text-red-600">{summary.notified}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-md transition-shadow col-span-2 sm:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('reminders.recurring')}</CardTitle>
-            <RefreshCw className="h-4 w-4 text-purple-600" />
+            <CardTitle className="text-xs sm:text-sm font-medium">{t('reminders.recurring')}</CardTitle>
+            <RefreshCw className="h-4 w-4 text-purple-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{summary.recurring}</div>
+            <div className="text-xl sm:text-2xl font-bold text-purple-600">{summary.recurring}</div>
           </CardContent>
         </Card>
       </div>
@@ -444,45 +463,91 @@ export default function RemindersPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Debug indicator - temporary */}
+              <div className="mb-2 text-xs text-gray-500">
+                Dispositivo: {isMobile ? '📱 Mobile' : '💻 Desktop'} | Ancho: {typeof window !== 'undefined' ? window.innerWidth : 'SSR'}px
+              </div>
+              
               {isMobile && (
-                <div className="flex items-center justify-between mb-4 pb-4 border-b">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleNavigate('PREV')}
-                  >
-                    ←
-                  </Button>
-                  <h3 className="font-semibold text-sm">
+                <div className="space-y-3 mb-4 pb-4 border-b">
+                  {/* View selector for mobile */}
+                  <div className="flex justify-center mb-3">
+                    <div className="flex bg-gray-100 rounded-lg p-1">
+                      <Button
+                        variant={currentView === 'month' ? 'default' : 'ghost'}
+                        size="sm"
+                        className="px-3 py-1 text-xs"
+                        onClick={() => setCurrentView('month')}
+                      >
+                        📅 Mes
+                      </Button>
+                      <Button
+                        variant={currentView === 'agenda' ? 'default' : 'ghost'}
+                        size="sm"
+                        className="px-3 py-1 text-xs"
+                        onClick={() => setCurrentView('agenda')}
+                      >
+                        📋 Lista
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Navigation */}
+                  <div className="flex items-center justify-between">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="touch-manipulation px-3 py-2"
+                      onClick={() => handleNavigate('PREV')}
+                    >
+                      ← Ant
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="touch-manipulation px-3 py-2"
+                      onClick={() => handleNavigate('TODAY')}
+                    >
+                      Hoy
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="touch-manipulation px-3 py-2"
+                      onClick={() => handleNavigate('NEXT')}
+                    >
+                      Sig →
+                    </Button>
+                  </div>
+                  <h3 className="font-semibold text-center text-base">
                     {moment(currentDate).format('MMMM YYYY')}
                   </h3>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleNavigate('NEXT')}
-                  >
-                    →
-                  </Button>
                 </div>
               )}
-              <div style={{ height: isMobile ? '400px' : '600px' }}>
+              <div style={{ height: isMobile ? '400px' : '600px', width: '100%' }}>
                 <Calendar
                   localizer={localizer}
                   events={events}
                   startAccessor="start"
                   endAccessor="end"
-                  style={{ height: '100%' }}
+                  style={{ 
+                    height: '100%', 
+                    width: '100%',
+                    fontSize: isMobile ? '12px' : '16px'
+                  }}
                   date={currentDate}
-                  view={isMobile ? 'agenda' : currentView}
+                  view={currentView}
                   onNavigate={handleNavigate}
-                  onView={isMobile ? undefined : handleViewChange}
+                  onView={handleViewChange}
                   onSelectEvent={handleSelectEvent}
                   onSelectSlot={handleSelectSlot}
                   selectable={true}
                   eventPropGetter={eventStyleGetter}
-                  popup={true}
-                  views={isMobile ? ['agenda'] : ['month', 'week', 'day', 'agenda']}
+                  popup={false}
+                  views={isMobile ? ['month', 'agenda'] : ['month', 'week', 'day', 'agenda']}
                   toolbar={!isMobile}
+                  step={30}
+                  timeslots={2}
                   messages={{
                     next: t('reminders.next'),
                     previous: t('reminders.previous'),
@@ -533,101 +598,141 @@ export default function RemindersPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {reminders.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    {t('reminders.noUpcomingReminders')}
-                  </p>
+                  <div className="text-center py-12">
+                    <div className="mx-auto w-16 h-16 mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                      <List className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <p className="text-muted-foreground text-sm">
+                      {t('reminders.noUpcomingReminders')}
+                    </p>
+                  </div>
                 ) : (
                   reminders.map((reminder) => (
                     <div
                       key={reminder.id}
-                      className={`border rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow ${
+                      className={`border rounded-xl p-4 cursor-pointer hover:shadow-lg transition-all duration-200 active:scale-98 ${
                         reminder.isNotified ? 'border-red-200 bg-red-50' : 
                         reminder.daysUntilDue === 0 ? 'border-yellow-200 bg-yellow-50' :
-                        'border-gray-200'
+                        reminder.daysUntilDue < 0 ? 'border-red-300 bg-red-100' :
+                        'border-gray-200 hover:border-gray-300'
                       }`}
                       onClick={() => handleEditReminder(reminder)}
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold">{reminder.title}</h3>
-                            <Badge className={getPriorityColor(reminder.priority)}>
+                      <div className="space-y-3">
+                        {/* Header with title and priority */}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-lg leading-tight truncate">
+                              {reminder.title}
+                            </h3>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <Badge 
+                              className={`${getPriorityColor(reminder.priority)} text-xs px-2 py-1`}
+                              variant="secondary"
+                            >
                               {getPriorityLabel(reminder.priority)}
                             </Badge>
                             {reminder.isRecurring && (
-                              <Badge variant="outline">
+                              <Badge variant="outline" className="text-xs px-2 py-1">
                                 <RefreshCw className="w-3 h-3 mr-1" />
                                 {t('reminders.recurring')}
                               </Badge>
                             )}
                           </div>
-                          
-                          {reminder.description && (
-                            <p className="text-sm text-muted-foreground mb-2">
-                              {reminder.description}
-                            </p>
-                          )}
+                        </div>
+                        
+                        {/* Description */}
+                        {reminder.description && (
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+                            {reminder.description}
+                          </p>
+                        )}
 
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span>📅 {reminder.formattedDueDate}</span>
-                            {reminder.amount && (
-                              <span>💰 {formatCurrency(reminder.amount)}</span>
-                            )}
-                            {reminder.category && (
-                              <span>
-                                {reminder.category.icon} {reminder.category.name}
-                              </span>
-                            )}
-                            <span className={
-                              reminder.isNotified ? 'text-red-600 font-medium' :
-                              reminder.daysUntilDue === 0 ? 'text-yellow-600 font-medium' :
-                              'text-blue-600'
-                            }>
+                        {/* Details grid - responsive */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <span className="text-base">📅</span>
+                            <span className="font-medium">{reminder.formattedDueDate}</span>
+                          </div>
+                          
+                          {reminder.amount && (
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <span className="text-base">💰</span>
+                              <span className="font-medium">{formatCurrency(reminder.amount)}</span>
+                            </div>
+                          )}
+                          
+                          {reminder.category && (
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <span className="text-base">{reminder.category.icon}</span>
+                              <span className="font-medium">{reminder.category.name}</span>
+                            </div>
+                          )}
+                          
+                          <div className={`flex items-center gap-2 font-semibold ${
+                            reminder.isNotified ? 'text-red-600' :
+                            reminder.daysUntilDue === 0 ? 'text-yellow-600' :
+                            reminder.daysUntilDue < 0 ? 'text-red-700' :
+                            'text-blue-600'
+                          }`}>
+                            <span className="text-base">⏰</span>
+                            <span className="text-sm">
                               {reminder.isNotified 
                                 ? t('reminders.notifiedDaysAgo', { days: Math.abs(reminder.daysUntilDue) })
                                 : reminder.daysUntilDue === 0
                                 ? t('reminders.dueToday')
                                 : reminder.daysUntilDue === 1
                                 ? t('reminders.dueTomorrow')
+                                : reminder.daysUntilDue < 0
+                                ? `Vencido hace ${Math.abs(reminder.daysUntilDue)} días`
                                 : t('reminders.dueInDays', { days: reminder.daysUntilDue })
                               }
                             </span>
                           </div>
                         </div>
 
-                        <div className="flex gap-2">
+                        {/* Actions - responsive layout */}
+                        <div className="flex gap-2 pt-2 border-t border-gray-200">
                           <Button
                             size="sm"
                             variant="outline"
+                            className="flex-1 sm:flex-none touch-manipulation"
                             onClick={(e) => {
                               e.stopPropagation()
                               handleEditReminder(reminder)
                             }}
                           >
-                            <Edit className="w-4 h-4" />
+                            <Edit className="w-4 h-4 sm:mr-2" />
+                            <span className="hidden sm:inline">Editar</span>
                           </Button>
+                          
                           <Button
                             size="sm"
                             variant="outline"
+                            className="flex-1 sm:flex-none touch-manipulation text-red-600 hover:text-red-700 hover:bg-red-50"
                             onClick={(e) => {
                               e.stopPropagation()
                               handleDeleteReminder(reminder.id)
                             }}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4 sm:mr-2" />
+                            <span className="hidden sm:inline">Eliminar</span>
                           </Button>
+                          
                           <Button
                             size="sm"
+                            className="flex-1 sm:flex-none touch-manipulation"
                             onClick={(e) => {
                               e.stopPropagation()
                               markAsCompleted(reminder.id)
                             }}
                             disabled={reminder.isCompleted}
                           >
-                            <CheckCircle className="w-4 h-4 mr-1" />
-                            {t('reminders.complete')}
+                            <CheckCircle className="w-4 h-4 sm:mr-1" />
+                            <span className="hidden sm:inline">{t('reminders.complete')}</span>
                           </Button>
                         </div>
                       </div>

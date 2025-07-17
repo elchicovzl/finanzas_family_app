@@ -203,7 +203,7 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] w-[95vw] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>
             {editingReminder ? 'Editar Recordatorio' : 'Nuevo Recordatorio'}
@@ -242,7 +242,7 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
           </div>
 
           {/* Amount and Category */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="amount">Monto (opcional)</Label>
               <Input
@@ -258,7 +258,7 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
             <div className="space-y-2">
               <Label htmlFor="categoryId">Categoría</Label>
               <Select value={formData.categoryId} onValueChange={(value) => setFormData(prev => ({ ...prev, categoryId: value }))}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Seleccionar categoría" />
                 </SelectTrigger>
                 <SelectContent>
@@ -276,7 +276,8 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
           </div>
 
           {/* Due Date, Time and Priority */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-4">
+            {/* Due Date - Full width on mobile */}
             <div className="space-y-2">
               <Label>Fecha de vencimiento *</Label>
               <Popover>
@@ -289,7 +290,7 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.dueDate ? format(formData.dueDate, "PPP", { locale: es }) : "Seleccionar fecha"}
+                    {formData.dueDate ? format(formData.dueDate, "dd/MM/yyyy", { locale: es }) : "Seleccionar fecha"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
@@ -303,57 +304,59 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
               </Popover>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="reminderTime">Hora de recordatorio</Label>
-              <Input
-                id="reminderTime"
-                type="time"
-                value={formData.reminderTime}
-                onChange={(e) => setFormData(prev => ({ ...prev, reminderTime: e.target.value }))}
-                className="w-full"
-              />
-            </div>
+            {/* Time, Priority and Notify Days - responsive grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="reminderTime">Hora de recordatorio</Label>
+                <Input
+                  id="reminderTime"
+                  type="time"
+                  value={formData.reminderTime}
+                  onChange={(e) => setFormData(prev => ({ ...prev, reminderTime: e.target.value }))}
+                  className="w-full"
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="priority">Prioridad</Label>
-              <Select value={formData.priority} onValueChange={(value: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT') => setFormData(prev => ({ ...prev, priority: value }))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="LOW">
-                    <Badge className="bg-green-100 text-green-800">Baja</Badge>
-                  </SelectItem>
-                  <SelectItem value="MEDIUM">
-                    <Badge className="bg-yellow-100 text-yellow-800">Media</Badge>
-                  </SelectItem>
-                  <SelectItem value="HIGH">
-                    <Badge className="bg-orange-100 text-orange-800">Alta</Badge>
-                  </SelectItem>
-                  <SelectItem value="URGENT">
-                    <Badge className="bg-red-100 text-red-800">Urgente</Badge>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="priority">Prioridad</Label>
+                <Select value={formData.priority} onValueChange={(value: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT') => setFormData(prev => ({ ...prev, priority: value }))}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="LOW">
+                      <Badge className="bg-green-100 text-green-800">Baja</Badge>
+                    </SelectItem>
+                    <SelectItem value="MEDIUM">
+                      <Badge className="bg-yellow-100 text-yellow-800">Media</Badge>
+                    </SelectItem>
+                    <SelectItem value="HIGH">
+                      <Badge className="bg-orange-100 text-orange-800">Alta</Badge>
+                    </SelectItem>
+                    <SelectItem value="URGENT">
+                      <Badge className="bg-red-100 text-red-800">Urgente</Badge>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-          {/* Notify Days Before */}
-          <div className="space-y-2">
-            <Label htmlFor="notifyDaysBefore">Notificar días antes</Label>
-            <Select value={formData.notifyDaysBefore} onValueChange={(value) => setFormData(prev => ({ ...prev, notifyDaysBefore: value }))}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="0">El mismo día</SelectItem>
-                <SelectItem value="1">1 día antes</SelectItem>
-                <SelectItem value="2">2 días antes</SelectItem>
-                <SelectItem value="3">3 días antes</SelectItem>
-                <SelectItem value="7">1 semana antes</SelectItem>
-                <SelectItem value="14">2 semanas antes</SelectItem>
-              </SelectContent>
-            </Select>
+              <div className="space-y-2">
+                <Label htmlFor="notifyDaysBefore">Notificar días antes</Label>
+                <Select value={formData.notifyDaysBefore} onValueChange={(value) => setFormData(prev => ({ ...prev, notifyDaysBefore: value }))}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">El mismo día</SelectItem>
+                    <SelectItem value="1">1 día antes</SelectItem>
+                    <SelectItem value="2">2 días antes</SelectItem>
+                    <SelectItem value="3">3 días antes</SelectItem>
+                    <SelectItem value="7">1 semana antes</SelectItem>
+                    <SelectItem value="14">2 semanas antes</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
 
           {/* Recurring Settings */}
@@ -372,11 +375,11 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
 
             {formData.isRecurring && (
               <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="recurrenceType">Frecuencia</Label>
                     <Select value={formData.recurrenceType} onValueChange={(value) => setFormData(prev => ({ ...prev, recurrenceType: value }))}>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -392,7 +395,7 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
                   <div className="space-y-2">
                     <Label htmlFor="recurrenceInterval">Intervalo</Label>
                     <Select value={formData.recurrenceInterval} onValueChange={(value) => setFormData(prev => ({ ...prev, recurrenceInterval: value }))}>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -443,16 +446,21 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
           </div>
 
           {/* Form Actions */}
-          <div className="flex justify-end space-x-2 pt-4">
+          <div className="flex flex-col sm:flex-row justify-end gap-2 sm:space-x-2 pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={loading}
+              className="w-full sm:w-auto order-2 sm:order-1"
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button 
+              type="submit" 
+              disabled={loading}
+              className="w-full sm:w-auto order-1 sm:order-2"
+            >
               {loading ? 'Guardando...' : editingReminder ? 'Actualizar' : 'Crear Recordatorio'}
             </Button>
           </div>
