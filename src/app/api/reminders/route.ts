@@ -12,6 +12,7 @@ const reminderSchema = z.object({
     today.setHours(0, 0, 0, 0)
     return date >= today
   }, { message: 'Due date cannot be in the past' }),
+  reminderTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format. Use HH:MM (24-hour format)').optional(),
   isRecurring: z.boolean().default(false),
   recurrenceType: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'CUSTOM']).optional(),
   recurrenceInterval: z.number().positive().optional(),
@@ -101,6 +102,7 @@ export async function GET(request: NextRequest) {
         currency: 'COP'
       }).format(Number(reminder.amount)) : null,
       formattedDueDate: new Intl.DateTimeFormat('es-CO').format(reminder.dueDate),
+      formattedReminderTime: reminder.reminderTime ? reminder.reminderTime : null,
       isNotified: !!reminder.lastNotified,
       daysUntilDue: Math.ceil((reminder.dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
     }))
@@ -153,6 +155,7 @@ export async function POST(request: NextRequest) {
         description: validatedData.description,
         amount: validatedData.amount,
         dueDate: validatedData.dueDate,
+        reminderTime: validatedData.reminderTime,
         isRecurring: validatedData.isRecurring,
         recurrenceType: validatedData.recurrenceType,
         recurrenceInterval: validatedData.recurrenceInterval,

@@ -69,7 +69,16 @@ export default function AddTransactionModal({
     // Validate that either category or custom category is provided
     if (!formData.categoryId && !formData.customCategory) {
       toast.warning(t('transactions.modal.validation.categoryRequired'), {
-        description: t('transactions.modal.validation.categoryRequiredDesc')
+        description: t('transactions.modal.validation.categoryRequiredDesc'),
+        style: {
+          backgroundColor: 'white',
+          color: '#1f2937',
+          border: '1px solid #e5e7eb',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+          opacity: 1
+        },
+        className: 'toast-custom',
+        duration: 4000
       })
       return
     }
@@ -109,7 +118,16 @@ export default function AddTransactionModal({
           : 'transactions.modal.success.expenseRecorded'
         
         toast.success(t('transactions.modal.success.transactionAdded'), {
-          description: t(descriptionKey, { amount: formattedAmount })
+          description: t(descriptionKey, { amount: formattedAmount }),
+          style: {
+            backgroundColor: 'white',
+            color: '#1f2937',
+            border: '1px solid #e5e7eb',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+            opacity: 1
+          },
+          className: 'toast-custom',
+          duration: 4000
         })
         
         // Call the callback to refresh data
@@ -119,13 +137,31 @@ export default function AddTransactionModal({
       } else {
         const errorData = await response.json()
         toast.error(t('transactions.modal.error.failedToAdd'), {
-          description: errorData.error || t('transactions.modal.error.tryAgain')
+          description: errorData.error || t('transactions.modal.error.tryAgain'),
+          style: {
+            backgroundColor: 'white',
+            color: '#1f2937',
+            border: '1px solid #e5e7eb',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+            opacity: 1
+          },
+          className: 'toast-custom',
+          duration: 5000
         })
       }
     } catch (error) {
       console.error('Error creating transaction:', error)
       toast.error(t('transactions.modal.error.connectionError'), {
-        description: t('transactions.modal.error.checkConnection')
+        description: t('transactions.modal.error.checkConnection'),
+        style: {
+          backgroundColor: 'white',
+          color: '#1f2937',
+          border: '1px solid #e5e7eb',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+          opacity: 1
+        },
+        className: 'toast-custom',
+        duration: 5000
       })
     } finally {
       setSubmitting(false)
@@ -220,6 +256,11 @@ export default function AddTransactionModal({
               value={formData.customCategory}
               onChange={(e) => setFormData(prev => ({ ...prev, customCategory: e.target.value, categoryId: '' }))}
             />
+            {formData.customCategory && (
+              <p className="text-xs text-muted-foreground">
+                💡 {t('transactions.modal.form.customCategoryHint')}
+              </p>
+            )}
           </div>
           
           <div className="space-y-2">

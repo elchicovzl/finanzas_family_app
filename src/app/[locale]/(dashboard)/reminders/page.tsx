@@ -74,6 +74,7 @@ export default function RemindersPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [currentView, setCurrentView] = useState<'month' | 'week' | 'day' | 'agenda'>('month')
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
   const [summary, setSummary] = useState({
     total: 0,
     completed: 0,
@@ -98,6 +99,18 @@ export default function RemindersPage() {
     fetchReminders()
     fetchCalendarEvents()
   }, [locale])
+
+  useEffect(() => {
+    // Detect mobile screen size
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   const fetchReminders = async () => {
     try {
@@ -197,8 +210,20 @@ export default function RemindersPage() {
   }
 
   // Calendar navigation handlers
-  const handleNavigate = (newDate: Date) => {
-    setCurrentDate(newDate)
+  const handleNavigate = (action: Date | 'PREV' | 'NEXT' | 'TODAY') => {
+    if (action === 'PREV') {
+      const newDate = new Date(currentDate)
+      newDate.setMonth(newDate.getMonth() - 1)
+      setCurrentDate(newDate)
+    } else if (action === 'NEXT') {
+      const newDate = new Date(currentDate)
+      newDate.setMonth(newDate.getMonth() + 1)
+      setCurrentDate(newDate)
+    } else if (action === 'TODAY') {
+      setCurrentDate(new Date())
+    } else {
+      setCurrentDate(action as Date)
+    }
   }
 
   const handleViewChange = (view: any) => {
@@ -419,7 +444,28 @@ export default function RemindersPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div style={{ height: '600px' }}>
+              {isMobile && (
+                <div className="flex items-center justify-between mb-4 pb-4 border-b">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleNavigate('PREV')}
+                  >
+                    ←
+                  </Button>
+                  <h3 className="font-semibold text-sm">
+                    {moment(currentDate).format('MMMM YYYY')}
+                  </h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleNavigate('NEXT')}
+                  >
+                    →
+                  </Button>
+                </div>
+              )}
+              <div style={{ height: isMobile ? '400px' : '600px' }}>
                 <Calendar
                   localizer={localizer}
                   events={events}
@@ -427,14 +473,16 @@ export default function RemindersPage() {
                   endAccessor="end"
                   style={{ height: '100%' }}
                   date={currentDate}
-                  view={currentView}
+                  view={isMobile ? 'agenda' : currentView}
                   onNavigate={handleNavigate}
-                  onView={handleViewChange}
+                  onView={isMobile ? undefined : handleViewChange}
                   onSelectEvent={handleSelectEvent}
                   onSelectSlot={handleSelectSlot}
                   selectable={true}
                   eventPropGetter={eventStyleGetter}
                   popup={true}
+                  views={isMobile ? ['agenda'] : ['month', 'week', 'day', 'agenda']}
+                  toolbar={!isMobile}
                   messages={{
                     next: t('reminders.next'),
                     previous: t('reminders.previous'),

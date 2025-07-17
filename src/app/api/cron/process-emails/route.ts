@@ -4,11 +4,22 @@ import { sendWelcomeEmail, sendInvitationEmail, sendReminderEmail } from '@/lib/
 import { EmailJobStatus, EmailJobType } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
-  // Verify cron secret for security
+  // Verify cron secret for security (Vercel uses Authorization header for cron jobs)
   const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const cronSecret = request.headers.get('x-cron-secret')
+  
+  // Check both possible authentication methods
+  const isValidVercelCron = authHeader === `Bearer ${process.env.CRON_SECRET}`
+  const isValidCustomCron = cronSecret === process.env.CRON_SECRET
+  
+  if (!isValidVercelCron && !isValidCustomCron) {
+    console.log('❌ Unauthorized process-emails cron request')
+    console.log('Auth header:', authHeader ? 'present' : 'missing')
+    console.log('Cron secret header:', cronSecret ? 'present' : 'missing')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  
+  console.log('✅ Process-emails cron authentication successful')
 
   console.log('🔄 Starting email jobs processing...')
 
@@ -82,6 +93,7 @@ export async function GET(request: NextRequest) {
               reminderDescription: reminderData.reminderDescription,
               amount: reminderData.amount,
               dueDate: new Date(reminderData.dueDate),
+              reminderTime: reminderData.reminderTime,
               daysUntilDue: reminderData.daysUntilDue,
               priority: reminderData.priority,
               isRecurring: reminderData.isRecurring,
