@@ -141,12 +141,12 @@ model Category {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  parent       Category?     @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children     Category[]    @relation("CategoryHierarchy")
-  transactions Transaction[]
-  budgets      Budget[]
-  budgetTemplates BudgetTemplate[]
-  reminders    Reminder[]
+  parent                   Category?                   @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children                 Category[]                  @relation("CategoryHierarchy")
+  transactions             Transaction[]
+  budgetCategories         BudgetCategory[]
+  budgetTemplateCategories BudgetTemplateCategory[]
+  reminders                Reminder[]
 
   @@map("categories")
 }
@@ -154,10 +154,8 @@ model Category {
 model Budget {
   id             String   @id @default(cuid())
   familyId       String   @map("family_id")
-  categoryId     String   @map("category_id")
   name           String
-  monthlyLimit   Decimal  @db.Decimal(12, 2) @map("monthly_limit")
-  currentSpent   Decimal  @default(0) @db.Decimal(12, 2) @map("current_spent")
+  totalBudget    Decimal  @db.Decimal(12, 2) @map("total_budget") // Suma de todas las categorías
   period         BudgetPeriod @default(MONTHLY)
   startDate      DateTime @map("start_date")
   endDate        DateTime? @map("end_date")
@@ -168,21 +166,20 @@ model Budget {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  family    Family         @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  category  Category       @relation(fields: [categoryId], references: [id])
-  template  BudgetTemplate? @relation(fields: [templateId], references: [id])
-  createdBy User           @relation("UserCreatedBudgets", fields: [createdByUserId], references: [id])
+  family     Family           @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  template   BudgetTemplate?  @relation(fields: [templateId], references: [id])
+  createdBy  User             @relation("UserCreatedBudgets", fields: [createdByUserId], references: [id])
+  categories BudgetCategory[] // Múltiples categorías por presupuesto
 
-  @@unique([familyId, categoryId, startDate])
+  @@unique([familyId, name, startDate])
   @@map("budgets")
 }
 
 model BudgetTemplate {
   id             String       @id @default(cuid())
   familyId       String       @map("family_id")
-  categoryId     String       @map("category_id")
   name           String
-  monthlyLimit   Decimal      @db.Decimal(12, 2) @map("monthly_limit")
+  totalBudget    Decimal      @db.Decimal(12, 2) @map("total_budget") // Suma de todas las categorías
   period         BudgetPeriod @default(MONTHLY)
   alertThreshold Decimal?     @db.Decimal(5, 2) @map("alert_threshold")
   isActive       Boolean      @default(true) @map("is_active")
@@ -192,13 +189,47 @@ model BudgetTemplate {
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime     @updatedAt @map("updated_at")
 
-  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  category  Category @relation(fields: [categoryId], references: [id])
-  createdBy User     @relation("UserCreatedBudgetTemplates", fields: [createdByUserId], references: [id])
-  budgets   Budget[]
+  family     Family                   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  createdBy  User                     @relation("UserCreatedBudgetTemplates", fields: [createdByUserId], references: [id])
+  budgets    Budget[]
+  categories BudgetTemplateCategory[] // Múltiples categorías por template
 
-  @@unique([familyId, categoryId])
+  @@unique([familyId, name])
   @@map("budget_templates")
+}
+
+model BudgetCategory {
+  id                String   @id @default(cuid())
+  budgetId          String   @map("budget_id")
+  categoryId        String   @map("category_id")
+  monthlyLimit      Decimal  @db.Decimal(12, 2) @map("monthly_limit")
+  currentSpent      Decimal  @default(0) @db.Decimal(12, 2) @map("current_spent")
+  rolloverAmount    Decimal  @default(0) @db.Decimal(12, 2) @map("rollover_amount") // Dinero acumulado del mes anterior
+  enableRollover    Boolean  @default(true) @map("enable_rollover")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  budget   Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@unique([budgetId, categoryId])
+  @@map("budget_categories")
+}
+
+model BudgetTemplateCategory {
+  id                String   @id @default(cuid())
+  templateId        String   @map("template_id")
+  categoryId        String   @map("category_id")
+  monthlyLimit      Decimal  @db.Decimal(12, 2) @map("monthly_limit")
+  enableRollover    Boolean  @default(true) @map("enable_rollover")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  template BudgetTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  category Category       @relation(fields: [categoryId], references: [id])
+
+  @@unique([templateId, categoryId])
+  @@map("budget_template_categories")
 }
 
 model Family {

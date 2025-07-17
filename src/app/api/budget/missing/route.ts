@@ -21,11 +21,15 @@ export async function GET(request: NextRequest) {
         autoGenerate: true
       },
       include: {
-        category: {
-          select: {
-            name: true,
-            color: true,
-            icon: true
+        categories: {
+          include: {
+            category: {
+              select: {
+                name: true,
+                color: true,
+                icon: true
+              }
+            }
           }
         }
       }
@@ -35,10 +39,11 @@ export async function GET(request: NextRequest) {
     const missingBudgets = []
     
     for (const template of autoTemplates) {
+      // Check if a budget already exists for this template in the current month
       const existingBudget = await prisma.budget.findFirst({
         where: {
           familyId: familyContext.family.id,
-          categoryId: template.categoryId,
+          templateId: template.id,
           startDate: {
             gte: currentMonthStart,
             lte: currentMonthEnd
@@ -47,16 +52,21 @@ export async function GET(request: NextRequest) {
       })
 
       if (!existingBudget) {
-        missingBudgets.push({
-          templateId: template.id,
-          templateName: template.name,
-          monthlyLimit: Number(template.monthlyLimit),
-          category: template.category,
-          formattedLimit: new Intl.NumberFormat('es-CO', {
-            style: 'currency',
-            currency: 'COP'
-          }).format(Number(template.monthlyLimit))
-        })
+        // For multi-category templates, we show the template as missing
+        // and display the first category as representative
+        const firstCategory = template.categories[0]
+        if (firstCategory) {
+          missingBudgets.push({
+            templateId: template.id,
+            templateName: template.name,
+            monthlyLimit: Number(template.totalBudget),
+            category: firstCategory.category,
+            formattedLimit: new Intl.NumberFormat('es-CO', {
+              style: 'currency',
+              currency: 'COP'
+            }).format(Number(template.totalBudget))
+          })
+        }
       }
     }
 

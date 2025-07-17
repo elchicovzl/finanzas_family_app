@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,30 +10,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Switch } from '@/components/ui/switch'
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import { Plus, Target, AlertTriangle, CheckCircle, TrendingUp, LayoutTemplate, Play, Settings, Bell, Zap } from 'lucide-react'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Plus, Target, AlertTriangle, CheckCircle, TrendingUp, LayoutTemplate, Play, Settings, Bell, Zap, Edit, MoreHorizontal, Eye } from 'lucide-react'
 import { toast } from 'sonner'
 import { useFamilyStore } from '@/stores/family-store'
 import { useTranslations } from '@/hooks/use-translations'
 import { translateCategories } from '@/lib/category-translations'
 
-interface Budget {
+interface BudgetCategory {
   id: string
-  name: string
+  categoryId: string
   monthlyLimit: number
   currentSpent: number
+  effectiveLimit: number
   remainingBudget: number
   percentageUsed: number
   isOverBudget: boolean
   isNearLimit: boolean
+  enableRollover: boolean
+  rolloverAmount: number
   formattedLimit: string
   formattedSpent: string
   formattedRemaining: string
@@ -43,6 +39,21 @@ interface Budget {
   }
 }
 
+interface Budget {
+  id: string
+  name: string
+  totalBudget: number
+  totalSpent: number
+  totalRemaining: number
+  totalPercentage: number
+  isOverBudget: boolean
+  isNearLimit: boolean
+  formattedTotalBudget: string
+  formattedTotalSpent: string
+  formattedTotalRemaining: string
+  categories: BudgetCategory[]
+}
+
 interface Category {
   id: string
   name: string
@@ -50,21 +61,30 @@ interface Category {
   icon: string
 }
 
-interface BudgetTemplate {
+interface BudgetTemplateCategory {
   id: string
-  name: string
+  categoryId: string
   monthlyLimit: number
-  period: string
-  alertThreshold: number
-  autoGenerate: boolean
-  lastGenerated: Date | null
+  enableRollover: boolean
   formattedLimit: string
-  isRunning?: boolean
   category: {
     name: string
     color: string
     icon: string
   }
+}
+
+interface BudgetTemplate {
+  id: string
+  name: string
+  totalBudget: number
+  period: string
+  alertThreshold: number
+  autoGenerate: boolean
+  lastGenerated: Date | null
+  formattedTotalBudget: string
+  isRunning?: boolean
+  categories: BudgetTemplateCategory[]
 }
 
 interface MissingBudget {
@@ -86,6 +106,7 @@ interface MissingBudgetsResponse {
 }
 
 export default function BudgetPage() {
+  const router = useRouter()
   const { currentFamily } = useFamilyStore()
   const { t, locale } = useTranslations()
   const [budgets, setBudgets] = useState<Budget[]>([])
@@ -96,28 +117,24 @@ export default function BudgetPage() {
   const [loading, setLoading] = useState(true)
   const [generatingAll, setGeneratingAll] = useState(false)
   const [activeTab, setActiveTab] = useState<'budgets' | 'templates'>('budgets')
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [templateDialogOpen, setTemplateDialogOpen] = useState(false)
-  const [formData, setFormData] = useState({
-    name: '',
-    categoryId: '',
-    monthlyLimit: '',
-    alertThreshold: '80'
-  })
-  const [templateFormData, setTemplateFormData] = useState({
-    name: '',
-    categoryId: '',
-    monthlyLimit: '',
-    alertThreshold: '80',
-    autoGenerate: true
-  })
 
   const fetchBudgets = async () => {
     try {
       const response = await fetch('/api/budget')
       if (response.ok) {
         const data = await response.json()
-        setBudgets(data)
+        // Translate categories in budgets
+        const budgetsWithTranslatedCategories = data.map((budget: any) => ({
+          ...budget,
+          categories: budget.categories.map((cat: any) => ({
+            ...cat,
+            category: {
+              ...cat.category,
+              name: translateCategories([cat.category], t)[0]?.name || cat.category.name
+            }
+          }))
+        }))
+        setBudgets(budgetsWithTranslatedCategories)
       }
     } catch (error) {
       console.error('Error fetching budgets:', error)
@@ -142,7 +159,18 @@ export default function BudgetPage() {
       const response = await fetch('/api/budget/templates')
       if (response.ok) {
         const data = await response.json()
-        setTemplates(data)
+        // Translate categories in templates
+        const templatesWithTranslatedCategories = data.map((template: any) => ({
+          ...template,
+          categories: template.categories.map((cat: any) => ({
+            ...cat,
+            category: {
+              ...cat.category,
+              name: translateCategories([cat.category], t)[0]?.name || cat.category.name
+            }
+          }))
+        }))
+        setTemplates(templatesWithTranslatedCategories)
       }
     } catch (error) {
       console.error('Error fetching templates:', error)
@@ -170,89 +198,6 @@ export default function BudgetPage() {
     loadData()
   }, [t])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!formData.name || !formData.categoryId || !formData.monthlyLimit) {
-      toast.error(t('budget.fillAllRequired'))
-      return
-    }
-
-    try {
-      const response = await fetch('/api/budget', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          categoryId: formData.categoryId,
-          monthlyLimit: parseFloat(formData.monthlyLimit.replace(/[^0-9]/g, '')),
-          alertThreshold: parseFloat(formData.alertThreshold)
-        }),
-      })
-
-      if (response.ok) {
-        toast.success(t('messages.budgetCreated'))
-        fetchBudgets()
-        setDialogOpen(false)
-        setFormData({
-          name: '',
-          categoryId: '',
-          monthlyLimit: '',
-          alertThreshold: '80'
-        })
-      } else {
-        const error = await response.json()
-        toast.error(error.error || t('budget.failedToCreateBudget'))
-      }
-    } catch (error) {
-      toast.error(t('budget.errorCreatingBudget'))
-    }
-  }
-
-  const handleTemplateSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!templateFormData.name || !templateFormData.categoryId || !templateFormData.monthlyLimit) {
-      toast.error(t('budget.fillAllRequired'))
-      return
-    }
-
-    try {
-      const response = await fetch('/api/budget/templates', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: templateFormData.name,
-          categoryId: templateFormData.categoryId,
-          monthlyLimit: parseFloat(templateFormData.monthlyLimit.replace(/[^0-9]/g, '')),
-          alertThreshold: parseFloat(templateFormData.alertThreshold),
-          autoGenerate: templateFormData.autoGenerate
-        }),
-      })
-
-      if (response.ok) {
-        toast.success(t('budget.templateCreatedSuccess'))
-        fetchTemplates()
-        setTemplateDialogOpen(false)
-        setTemplateFormData({
-          name: '',
-          categoryId: '',
-          monthlyLimit: '',
-          alertThreshold: '80',
-          autoGenerate: true
-        })
-      } else {
-        const error = await response.json()
-        toast.error(error.error || t('budget.failedToCreateTemplate'))
-      }
-    } catch (error) {
-      toast.error(t('budget.errorCreatingTemplate'))
-    }
-  }
 
   const generateBudgetFromTemplate = async (templateId: string, isRunning?: boolean) => {
     if (isRunning) {
@@ -325,6 +270,16 @@ export default function BudgetPage() {
     }
   }
 
+  const getCategoryStatus = (category: BudgetCategory) => {
+    if (category.isOverBudget) {
+      return { color: 'destructive', icon: AlertTriangle, text: t('budget.overBudget') }
+    } else if (category.isNearLimit) {
+      return { color: 'warning', icon: AlertTriangle, text: t('budget.nearLimit') }
+    } else {
+      return { color: 'success', icon: CheckCircle, text: t('budget.onTrack') }
+    }
+  }
+
 
   const formatCurrency = (amount: number) => {
     const localeCode = locale === 'es' ? 'es-CO' : 'en-US'
@@ -335,6 +290,7 @@ export default function BudgetPage() {
     }).format(amount)
   }
 
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -343,8 +299,8 @@ export default function BudgetPage() {
     )
   }
 
-  const totalBudget = budgets.reduce((sum, budget) => sum + Number(budget.monthlyLimit), 0)
-  const totalSpent = budgets.reduce((sum, budget) => sum + Number(budget.currentSpent), 0)
+  const totalBudget = budgets.reduce((sum, budget) => sum + Number(budget.totalBudget), 0)
+  const totalSpent = budgets.reduce((sum, budget) => sum + Number(budget.totalSpent), 0)
   const totalRemaining = totalBudget - totalSpent
   const overallPercentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0
 
@@ -358,186 +314,17 @@ export default function BudgetPage() {
           </p>
         </div>
         <div className="flex space-x-2">
-          <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <LayoutTemplate className="mr-2 h-4 w-4" />
-                {t('budget.createTemplate')}
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{t('budget.createTemplateTitle')}</DialogTitle>
-                <DialogDescription>
-                  {t('budget.createTemplateDesc')}
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleTemplateSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="template-name">{t('budget.templateName')}</Label>
-                  <Input
-                    id="template-name"
-                    placeholder={t('budget.templateNamePlaceholder')}
-                    value={templateFormData.name}
-                    onChange={(e) => setTemplateFormData(prev => ({ ...prev, name: e.target.value }))}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="template-category">{t('common.category')}</Label>
-                  <Select 
-                    value={templateFormData.categoryId} 
-                    onValueChange={(value) => setTemplateFormData(prev => ({ ...prev, categoryId: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('budget.selectCategory')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          <div className="flex items-center space-x-2">
-                            <span>{category.icon}</span>
-                            <span>{category.name}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="template-limit">{t('budget.monthlyLimit')}</Label>
-                  <Input
-                    id="template-limit"
-                    type="text"
-                    placeholder={t('budget.monthlyLimitPlaceholder')}
-                    value={templateFormData.monthlyLimit}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      const numericValue = value.replace(/[^0-9]/g, '')
-                      const formatted = numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                      setTemplateFormData(prev => ({ ...prev, monthlyLimit: formatted }))
-                    }}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="template-threshold">{t('budget.alertThresholdPercent')}</Label>
-                  <Select 
-                    value={templateFormData.alertThreshold} 
-                    onValueChange={(value) => setTemplateFormData(prev => ({ ...prev, alertThreshold: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="50">50%</SelectItem>
-                      <SelectItem value="70">70%</SelectItem>
-                      <SelectItem value="80">80%</SelectItem>
-                      <SelectItem value="90">90%</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="auto-generate"
-                    checked={templateFormData.autoGenerate}
-                    onCheckedChange={(checked) => setTemplateFormData(prev => ({ ...prev, autoGenerate: checked }))}
-                  />
-                  <Label htmlFor="auto-generate">{t('budget.autoGenerateMonthly')}</Label>
-                </div>
-                <Button type="submit" className="w-full">
-                  {t('budget.createTemplate')}
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                {t('budget.createBudget')}
-              </Button>
-            </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t('budget.createBudgetTitle')}</DialogTitle>
-              <DialogDescription>
-                {t('budget.createBudgetDesc')}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">{t('budget.budgetName')}</Label>
-                <Input
-                  id="name"
-                  placeholder={t('budget.budgetNamePlaceholder')}
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="category">{t('common.category')}</Label>
-                <Select 
-                  value={formData.categoryId} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, categoryId: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('budget.selectCategory')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        <div className="flex items-center space-x-2">
-                          <span>{category.icon}</span>
-                          <span>{category.name}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="limit">{t('budget.monthlyLimit')}</Label>
-                <Input
-                  id="limit"
-                  type="text"
-                  placeholder={t('budget.monthlyLimitPlaceholder')}
-                  value={formData.monthlyLimit}
-                  onChange={(e) => {
-                    const value = e.target.value
-                    // Remove all non-numeric characters
-                    const numericValue = value.replace(/[^0-9]/g, '')
-                    // Format with thousands separator
-                    const formatted = numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                    setFormData(prev => ({ ...prev, monthlyLimit: formatted }))
-                  }}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="threshold">{t('budget.alertThresholdPercent')}</Label>
-                <Select 
-                  value={formData.alertThreshold} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, alertThreshold: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="50">50%</SelectItem>
-                    <SelectItem value="70">70%</SelectItem>
-                    <SelectItem value="80">80%</SelectItem>
-                    <SelectItem value="90">90%</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button type="submit" className="w-full">
-                {t('budget.createBudget')}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+          <Button 
+            variant="outline" 
+            onClick={() => router.push('/budget/templates/new')}
+          >
+            <LayoutTemplate className="mr-2 h-4 w-4" />
+            {t('budget.createTemplate')}
+          </Button>
+          <Button onClick={() => router.push('/budget/new')}>
+            <Plus className="mr-2 h-4 w-4" />
+            {t('budget.createBudget')}
+          </Button>
         </div>
       </div>
 
@@ -697,35 +484,57 @@ export default function BudgetPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <span>{budget.category.icon}</span>
-                    <CardTitle className="text-lg">{budget.name}</CardTitle>
+                    <Target className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-lg">
+                      {budget.name}
+                    </CardTitle>
                   </div>
-                  <Badge 
-                    variant={status.color as any}
-                    className="flex items-center space-x-1"
-                  >
-                    <StatusIcon className="h-3 w-3" />
-                    <span>{status.text}</span>
-                  </Badge>
+                  <div className="flex items-center space-x-2">
+                    <Badge 
+                      variant={status.color as any}
+                      className="flex items-center space-x-1"
+                    >
+                      <StatusIcon className="h-3 w-3" />
+                      <span>{status.text}</span>
+                    </Badge>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => router.push(`/budget/${budget.id}/edit`)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          {t('common.edit')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push(`/budget/${budget.id}`)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          {t('budget.viewDetails')}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
                 <CardDescription>
-                  {budget.category.name} • {t('budget.thisMonth')}
+                  {budget.categories.length} {t('budget.categories')} • {t('budget.thisMonth')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Resumen total */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>{t('budget.spent')}</span>
-                    <span className="font-medium">{budget.formattedSpent}</span>
+                    <span>{t('budget.totalSpent')}</span>
+                    <span className="font-medium">{budget.formattedTotalSpent}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span>{t('budget.budget')}</span>
-                    <span className="font-medium">{budget.formattedLimit}</span>
+                    <span>{t('budget.totalBudget')}</span>
+                    <span className="font-medium">{budget.formattedTotalBudget}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>{t('budget.remaining')}</span>
-                    <span className={`font-medium ${budget.remainingBudget >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {budget.formattedRemaining}
+                    <span className={`font-medium ${budget.totalRemaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {budget.formattedTotalRemaining}
                     </span>
                   </div>
                 </div>
@@ -733,12 +542,43 @@ export default function BudgetPage() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>{t('budget.progress')}</span>
-                    <span>{budget.percentageUsed}%</span>
+                    <span>{budget.totalPercentage}%</span>
                   </div>
                   <Progress 
-                    value={Math.min(budget.percentageUsed, 100)} 
+                    value={Math.min(budget.totalPercentage, 100)} 
                     className="h-2"
                   />
+                </div>
+
+                {/* Desglose por categorías */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">{t('budget.categoryBreakdown')}</h4>
+                  <div className="space-y-1">
+                    {budget.categories.slice(0, 3).map((category) => (
+                      <div key={category.id} className="flex items-center justify-between text-xs">
+                        <div className="flex items-center space-x-2">
+                          <span>{category.category.icon}</span>
+                          <span>{category.category.name}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className={category.remainingBudget >= 0 ? 'text-green-600' : 'text-red-600'}>
+                            {category.formattedRemaining}
+                          </span>
+                          <div className="w-12 bg-gray-200 rounded-full h-1">
+                            <div 
+                              className={`h-1 rounded-full ${category.isOverBudget ? 'bg-red-500' : category.isNearLimit ? 'bg-yellow-500' : 'bg-green-500'}`}
+                              style={{ width: `${Math.min(category.percentageUsed, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {budget.categories.length > 3 && (
+                      <div className="text-xs text-muted-foreground">
+                        +{budget.categories.length - 3} {t('budget.moreCategories')}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -753,7 +593,7 @@ export default function BudgetPage() {
                   <p className="text-muted-foreground text-center mb-4">
                     {t('budget.noBudgetsCreatedDesc')}
                   </p>
-                  <Button onClick={() => setDialogOpen(true)}>
+                  <Button onClick={() => router.push('/budget/new')}>
                     <Plus className="mr-2 h-4 w-4" />
                     {t('budget.createFirstBudget')}
                   </Button>
@@ -770,7 +610,7 @@ export default function BudgetPage() {
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <span>{template.category.icon}</span>
+                      <LayoutTemplate className="h-5 w-5 text-primary" />
                       <CardTitle className="text-lg">{template.name}</CardTitle>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -785,14 +625,14 @@ export default function BudgetPage() {
                     </div>
                   </div>
                   <CardDescription>
-                    {template.category.name} • {template.period.toLowerCase()}
+                    {template.categories.length} {t('budget.categories')} • {template.period.toLowerCase()}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span>{t('budget.limit')}</span>
-                      <span className="font-medium">{template.formattedLimit}</span>
+                      <span>{t('budget.totalBudget')}</span>
+                      <span className="font-medium">{template.formattedTotalBudget}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>{t('budget.alertAt')}</span>
@@ -806,6 +646,30 @@ export default function BudgetPage() {
                         </span>
                       </div>
                     )}
+                  </div>
+
+                  {/* Desglose por categorías */}
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium">{t('budget.templateCategories')}</h4>
+                    <div className="space-y-1">
+                      {template.categories.slice(0, 3).map((category) => (
+                        <div key={category.id} className="flex items-center justify-between text-xs">
+                          <div className="flex items-center space-x-2">
+                            <span>{category.category.icon}</span>
+                            <span>{category.category.name}</span>
+                            {category.enableRollover && (
+                              <span className="text-blue-600">💰</span>
+                            )}
+                          </div>
+                          <span className="font-medium">{category.formattedLimit}</span>
+                        </div>
+                      ))}
+                      {template.categories.length > 3 && (
+                        <div className="text-xs text-muted-foreground">
+                          +{template.categories.length - 3} {t('budget.moreCategories')}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
                   <div className="flex space-x-2">
@@ -822,10 +686,7 @@ export default function BudgetPage() {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => {
-                        // TODO: Implement edit template functionality
-                        toast.info(t('budget.editTemplateSoon'))
-                      }}
+                      onClick={() => router.push(`/budget/templates/${template.id}/edit`)}
                     >
                       <Settings className="h-4 w-4" />
                     </Button>
@@ -842,7 +703,7 @@ export default function BudgetPage() {
                   <p className="text-muted-foreground text-center mb-4">
                     {t('budget.noTemplatesCreatedDesc')}
                   </p>
-                  <Button onClick={() => setTemplateDialogOpen(true)}>
+                  <Button onClick={() => router.push('/budget/templates/new')}>
                     <Plus className="mr-2 h-4 w-4" />
                     {t('budget.createFirstTemplate')}
                   </Button>

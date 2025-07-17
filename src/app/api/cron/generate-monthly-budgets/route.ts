@@ -23,6 +23,13 @@ export async function GET(request: NextRequest) {
       where: {
         isActive: true,
         autoGenerate: true
+      },
+      include: {
+        categories: {
+          include: {
+            category: true
+          }
+        }
       }
     })
 
@@ -38,7 +45,7 @@ export async function GET(request: NextRequest) {
         const existingBudget = await prisma.budget.findFirst({
           where: {
             familyId: template.familyId,
-            categoryId: template.categoryId,
+            name: template.name,
             startDate: {
               gte: currentMonthStart,
               lte: currentMonthEnd
@@ -58,26 +65,100 @@ export async function GET(request: NextRequest) {
           continue
         }
 
-        // Create budget from template
-        const budget = await prisma.budget.create({
-          data: {
+        // Buscar presupuesto del mes anterior para calcular rollover
+        const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+        const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
+
+        const previousBudget = await prisma.budget.findFirst({
+          where: {
             familyId: template.familyId,
-            createdByUserId: template.createdByUserId,
-            categoryId: template.categoryId,
             name: template.name,
-            monthlyLimit: template.monthlyLimit,
-            period: template.period,
-            startDate: currentMonthStart,
-            endDate: currentMonthEnd,
-            alertThreshold: template.alertThreshold,
-            templateId: template.id
+            startDate: {
+              gte: previousMonthStart,
+              lte: previousMonthEnd
+            }
+          },
+          include: {
+            categories: {
+              include: {
+                category: true
+              }
+            }
           }
         })
 
-        // Update template's last generated date
-        await prisma.budgetTemplate.update({
-          where: { id: template.id },
-          data: { lastGenerated: now }
+        // Create budget from template with rollover logic
+        const budget = await prisma.$transaction(async (tx) => {
+          // Create the budget
+          const newBudget = await tx.budget.create({
+            data: {
+              familyId: template.familyId,
+              createdByUserId: template.createdByUserId,
+              name: template.name,
+              totalBudget: template.totalBudget,
+              period: template.period,
+              startDate: currentMonthStart,
+              endDate: currentMonthEnd,
+              alertThreshold: template.alertThreshold,
+              templateId: template.id
+            }
+          })
+
+          // Create budget categories with rollover calculation
+          const budgetCategories = await Promise.all(
+            template.categories.map(async (templateCategory) => {
+              let rolloverAmount = 0
+
+              // Calculate rollover if there's a previous budget
+              if (previousBudget) {
+                const previousCategory = previousBudget.categories.find(
+                  cat => cat.categoryId === templateCategory.categoryId
+                )
+
+                if (previousCategory && templateCategory.enableRollover) {
+                  // Calculate spent amount in previous month
+                  const spent = await tx.transaction.aggregate({
+                    where: {
+                      familyId: template.familyId,
+                      categoryId: templateCategory.categoryId,
+                      type: 'EXPENSE',
+                      date: {
+                        gte: previousMonthStart,
+                        lt: previousMonthEnd
+                      }
+                    },
+                    _sum: { amount: true }
+                  })
+
+                  const spentAmount = Math.abs(Number(spent._sum.amount || 0))
+                  const effectiveLimit = Number(previousCategory.monthlyLimit) + Number(previousCategory.rolloverAmount)
+                  const remaining = effectiveLimit - spentAmount
+
+                  if (remaining > 0) {
+                    rolloverAmount = remaining
+                  }
+                }
+              }
+
+              return tx.budgetCategory.create({
+                data: {
+                  budgetId: newBudget.id,
+                  categoryId: templateCategory.categoryId,
+                  monthlyLimit: templateCategory.monthlyLimit,
+                  enableRollover: templateCategory.enableRollover,
+                  rolloverAmount: rolloverAmount
+                }
+              })
+            })
+          )
+
+          // Update template's last generated date
+          await tx.budgetTemplate.update({
+            where: { id: template.id },
+            data: { lastGenerated: now }
+          })
+
+          return { ...newBudget, categories: budgetCategories }
         })
 
         generatedCount++
@@ -87,10 +168,12 @@ export async function GET(request: NextRequest) {
           familyId: template.familyId,
           budgetId: budget.id,
           status: 'generated',
-          amount: Number(template.monthlyLimit)
+          amount: Number(template.totalBudget),
+          categoriesCount: template.categories.length,
+          rolloverApplied: previousBudget ? true : false
         })
 
-        console.log(`Generated budget for template ${template.name} (${template.id})`)
+        console.log(`Generated budget for template ${template.name} (${template.id}) with ${template.categories.length} categories`)
 
       } catch (error) {
         console.error(`Error processing template ${template.id}:`, error)
