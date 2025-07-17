@@ -111,17 +111,6 @@ export default function RemindersPage() {
       // Consider it mobile if any of these conditions are true
       const mobile = isMobileUserAgent || (isMobileScreen && isTouchDevice)
       
-      // Debug info (remove in production)
-      console.log('Mobile detection:', {
-        userAgent: userAgent.substring(0, 50) + '...',
-        isMobileUserAgent,
-        isMobileScreen,
-        isTouchDevice,
-        windowWidth: window.innerWidth,
-        screenWidth: window.screen?.width,
-        finalMobile: mobile
-      })
-      
       setIsMobile(mobile)
     }
     
@@ -463,11 +452,6 @@ export default function RemindersPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Debug indicator - temporary */}
-              <div className="mb-2 text-xs text-gray-500">
-                Dispositivo: {isMobile ? '📱 Mobile' : '💻 Desktop'} | Ancho: {typeof window !== 'undefined' ? window.innerWidth : 'SSR'}px
-              </div>
-              
               {isMobile && (
                 <div className="space-y-3 mb-4 pb-4 border-b">
                   {/* View selector for mobile */}
