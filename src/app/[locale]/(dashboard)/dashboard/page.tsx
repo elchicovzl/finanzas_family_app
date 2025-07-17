@@ -87,8 +87,17 @@ export default function DashboardPage() {
   }
 
   const handleUnderConstruction = (feature: string) => {
-    toast.info(`${feature} is under construction`, {
-      description: 'This feature is coming soon!'
+    toast.info(t('messages.underConstruction', { feature }), {
+      description: t('messages.featureComingSoon'),
+      style: {
+        backgroundColor: 'white',
+        color: '#1f2937',
+        border: '1px solid #e5e7eb',
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+        opacity: 1
+      },
+      className: 'toast-custom',
+      duration: 4000
     })
   }
 

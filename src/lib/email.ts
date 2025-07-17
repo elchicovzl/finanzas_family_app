@@ -30,6 +30,7 @@ interface SendReminderEmailParams {
   reminderDescription?: string
   amount?: number
   dueDate: Date
+  reminderTime?: string
   daysUntilDue: number
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
   isRecurring: boolean
@@ -103,6 +104,7 @@ export async function sendReminderEmail({
   reminderDescription,
   amount,
   dueDate,
+  reminderTime,
   daysUntilDue,
   priority,
   isRecurring,
@@ -128,6 +130,7 @@ export async function sendReminderEmail({
     const emailHtml = await render(ReminderEmail({
       reminderTitle,
       dueDate: formattedDueDate,
+      reminderTime,
       priority,
       amount,
       category: category?.name,

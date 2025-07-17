@@ -10,6 +10,7 @@ interface Category {
   name: string
   color: string
   icon: string
+  isCustom: boolean
 }
 
 interface CategoryFilterProps {
@@ -40,24 +41,44 @@ export function CategoryFilter({
       if (response.ok) {
         const data: Category[] = await response.json()
         
-        // Translate category names
+        // Translate all categories (function will only translate predefined ones)
         const translatedCategories = translateCategories(data, t)
         
-        const categoryOptions: ComboboxOption[] = translatedCategories.map(category => ({
-          value: category.id,
-          label: category.name,
-          icon: category.icon,
-          color: category.color
-        }))
+        // Separate predefined and custom categories after translation
+        const predefinedCategories = translatedCategories.filter(category => !category.isCustom)
+        const customCategories = translatedCategories.filter(category => category.isCustom)
+        
+        // Create category options
+        const categoryOptions: ComboboxOption[] = []
 
         // Add "All Categories" option if requested
         if (includeAllOption) {
-          categoryOptions.unshift({
+          categoryOptions.push({
             value: 'all',
             label: allOptionText || t('transactions.allCategories'),
             icon: '📋'
           })
         }
+
+        // Add predefined categories
+        predefinedCategories.forEach(category => {
+          categoryOptions.push({
+            value: category.id,
+            label: category.name,
+            icon: category.icon,
+            color: category.color
+          })
+        })
+
+        // Add custom categories with a visual indicator
+        customCategories.forEach(category => {
+          categoryOptions.push({
+            value: category.id,
+            label: `${category.icon} ${category.name}`, // Custom categories show icon + name
+            icon: category.icon,
+            color: category.color
+          })
+        })
 
         setCategories(categoryOptions)
       }

@@ -286,6 +286,7 @@ model Reminder {
   description   String?
   amount        Decimal?          @db.Decimal(12, 2)
   dueDate       DateTime          @map("due_date")
+  reminderTime  String?           @map("reminder_time") // Formato HH:MM (ej: "09:00", "14:30")
   isRecurring   Boolean           @default(false) @map("is_recurring")
   recurrenceType RecurrenceType?  @map("recurrence_type")
   recurrenceInterval Int?          @map("recurrence_interval") // Para personalizar intervalos (ej: cada 2 semanas)

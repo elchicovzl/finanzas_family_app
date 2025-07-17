@@ -4,11 +4,23 @@ import { EmailJobType, EmailJobStatus } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify cron secret for security
+    // Verify cron secret for security (Vercel uses Authorization header for cron jobs)
+    const authHeader = request.headers.get('authorization')
     const cronSecret = request.headers.get('x-cron-secret')
-    if (cronSecret !== process.env.CRON_SECRET) {
+    
+    // Check both possible authentication methods
+    const isValidVercelCron = authHeader === `Bearer ${process.env.CRON_SECRET}`
+    const isValidCustomCron = cronSecret === process.env.CRON_SECRET
+    
+    if (!isValidVercelCron && !isValidCustomCron) {
+      console.log('❌ Unauthorized cron request')
+      console.log('Auth header:', authHeader ? 'present' : 'missing')
+      console.log('Cron secret header:', cronSecret ? 'present' : 'missing')
+      console.log('Expected secret configured:', !!process.env.CRON_SECRET)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    
+    console.log('✅ Cron authentication successful')
 
     const now = new Date()
     const tomorrow = new Date(now)
@@ -108,8 +120,22 @@ export async function GET(request: NextRequest) {
 
         console.log(`📧 Processing reminder: "${reminder.title}" for family "${reminder.family.name}"`)
         console.log(`   Due date: ${reminder.dueDate.toISOString()}`)
+        console.log(`   Reminder time: ${reminder.reminderTime || 'Not set'}`)
         console.log(`   Days until due: ${daysUntilDue}`)
         console.log(`   Family members: ${reminder.family.members.length}`)
+        
+        // Check if we should respect the specific reminder time
+        if (reminder.reminderTime && daysUntilDue === 0) {
+          const [hours, minutes] = reminder.reminderTime.split(':').map(Number)
+          const reminderDateTime = new Date(reminder.dueDate)
+          reminderDateTime.setHours(hours, minutes, 0, 0)
+          
+          // If reminder time hasn't passed yet today, skip
+          if (reminderDateTime > now) {
+            console.log(`   ⏭️  Skipping - reminder time ${reminder.reminderTime} hasn't arrived yet`)
+            continue
+          }
+        }
 
         // Create email jobs for all active family members
         for (const member of reminder.family.members) {
@@ -150,6 +176,7 @@ export async function GET(request: NextRequest) {
                   reminderDescription: reminder.description || undefined,
                   amount: reminder.amount ? Number(reminder.amount) : undefined,
                   dueDate: reminder.dueDate.toISOString(),
+                  reminderTime: reminder.reminderTime || undefined,
                   daysUntilDue,
                   priority: reminder.priority,
                   isRecurring: reminder.isRecurring,

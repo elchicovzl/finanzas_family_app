@@ -9,6 +9,7 @@ import EmailLayout from '../components/EmailLayout'
 interface ReminderEmailProps {
   reminderTitle: string
   dueDate: string
+  reminderTime?: string
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
   amount?: number
   category?: string
@@ -21,6 +22,7 @@ interface ReminderEmailProps {
 export default function ReminderEmail({
   reminderTitle,
   dueDate,
+  reminderTime,
   priority,
   amount,
   category,
@@ -128,6 +130,18 @@ export default function ReminderEmail({
             <Text style={detailValueText}>{formatDate(dueDate)}</Text>
           </Column>
         </Row>
+
+        {reminderTime && (
+          <Row style={detailRow}>
+            <Column style={detailIcon}>⏰</Column>
+            <Column style={detailLabel}>
+              <Text style={detailLabelText}>Hora de recordatorio:</Text>
+            </Column>
+            <Column style={detailValue}>
+              <Text style={detailValueText}>{reminderTime}</Text>
+            </Column>
+          </Row>
+        )}
 
         {amount && (
           <Row style={detailRow}>

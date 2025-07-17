@@ -3,6 +3,22 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Toast customizations */
+.toast-custom [data-description] {
+  color: #374151 !important;
+  opacity: 1 !important;
+  font-weight: 500 !important;
+}
+
+/* Touch interactions */
+.active\:scale-98:active {
+  transform: scale(0.98);
+}
+
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
 :root {
   --background: oklch(0.9190 0.0126 164.7795);
   --foreground: oklch(0.1300 0.0280 261.6920);

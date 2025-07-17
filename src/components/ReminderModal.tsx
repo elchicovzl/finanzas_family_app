@@ -32,6 +32,7 @@ interface Reminder {
   description?: string
   amount?: number
   dueDate: string
+  reminderTime?: string
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
   isRecurring: boolean
   recurrenceType?: string
@@ -46,6 +47,7 @@ interface ReminderFormData {
   description: string
   amount: string
   dueDate: Date
+  reminderTime: string
   isRecurring: boolean
   recurrenceType: string
   recurrenceInterval: string
@@ -72,6 +74,7 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
     description: '',
     amount: '',
     dueDate: new Date(),
+    reminderTime: '09:00',
     isRecurring: false,
     recurrenceType: 'MONTHLY',
     recurrenceInterval: '1',
@@ -92,6 +95,7 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
         description: editingReminder.description || '',
         amount: editingReminder.amount ? editingReminder.amount.toString() : '',
         dueDate: new Date(editingReminder.dueDate),
+        reminderTime: editingReminder.reminderTime || '09:00',
         isRecurring: editingReminder.isRecurring || false,
         recurrenceType: editingReminder.recurrenceType || 'MONTHLY',
         recurrenceInterval: editingReminder.recurrenceInterval?.toString() || '1',
@@ -108,6 +112,7 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
         description: '',
         amount: '',
         dueDate: defaultDate,
+        reminderTime: '09:00',
         isRecurring: false,
         recurrenceType: 'MONTHLY',
         recurrenceInterval: '1',
@@ -157,6 +162,7 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
         description: formData.description.trim() || undefined,
         amount: formData.amount ? parseFloat(formData.amount) : undefined,
         dueDate: formData.dueDate.toISOString(),
+        reminderTime: formData.reminderTime || undefined,
         isRecurring: formData.isRecurring,
         recurrenceType: formData.isRecurring ? formData.recurrenceType : undefined,
         recurrenceInterval: formData.isRecurring ? parseInt(formData.recurrenceInterval) : undefined,
@@ -269,8 +275,8 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
             </div>
           </div>
 
-          {/* Due Date and Priority */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Due Date, Time and Priority */}
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Fecha de vencimiento *</Label>
               <Popover>
@@ -295,6 +301,17 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
                   />
                 </PopoverContent>
               </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="reminderTime">Hora de recordatorio</Label>
+              <Input
+                id="reminderTime"
+                type="time"
+                value={formData.reminderTime}
+                onChange={(e) => setFormData(prev => ({ ...prev, reminderTime: e.target.value }))}
+                className="w-full"
+              />
             </div>
 
             <div className="space-y-2">

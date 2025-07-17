@@ -25,7 +25,8 @@ export function translateCategoryName(categoryName: string, t: (key: string) => 
 export function translateCategory(category: any, t: (key: string) => string) {
   return {
     ...category,
-    name: translateCategoryName(category.name, t)
+    // Only translate predefined categories, keep custom categories as-is
+    name: category.isCustom ? category.name : translateCategoryName(category.name, t)
   }
 }
 

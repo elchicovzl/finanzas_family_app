@@ -62,6 +62,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    let finalCategoryId = categoryId
+
+    // If customCategory is provided, auto-create or find existing category
+    if (customCategory) {
+      // First, check if a category with this name already exists (case-insensitive)
+      let existingCategory = await prisma.category.findFirst({
+        where: { 
+          name: { 
+            equals: customCategory.trim(), 
+            mode: 'insensitive' 
+          }
+        }
+      })
+
+      if (!existingCategory) {
+        // Create new custom category
+        existingCategory = await prisma.category.create({
+          data: {
+            name: customCategory.trim(),
+            color: '#6B7280', // Default gray color
+            icon: type === 'INCOME' ? '💰' : '📄', // Income or expense icon
+            isCustom: true
+          }
+        })
+      }
+
+      finalCategoryId = existingCategory.id
+    }
+
     // If categoryId is provided, verify it exists
     if (categoryId) {
       const category = await prisma.category.findUnique({
@@ -93,15 +122,13 @@ export async function POST(request: NextRequest) {
       // accountId is intentionally null for manual transactions (cash transactions)
     }
 
-    // Only add categoryId if it's provided
-    if (categoryId) {
-      transactionData.categoryId = categoryId
+    // Always add the final categoryId (either original or auto-created)
+    if (finalCategoryId) {
+      transactionData.categoryId = finalCategoryId
     }
 
-    // Only add customCategory if it's provided
-    if (customCategory) {
-      transactionData.customCategory = customCategory
-    }
+    // Remove customCategory field since we now always have a categoryId
+    // customCategory is no longer stored in the transaction
 
     // Only add reference if it's provided
     if (reference) {
@@ -144,8 +171,8 @@ export async function POST(request: NextRequest) {
         name: transaction.category.name,
         color: transaction.category.color,
         icon: transaction.category.icon,
+        isCustom: transaction.category.isCustom,
       } : null,
-      customCategory: transaction.customCategory,
       reference: transaction.reference,
       tags: transaction.tags,
       isRecurring: transaction.isRecurring,
