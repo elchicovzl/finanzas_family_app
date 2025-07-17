@@ -114,36 +114,42 @@ export async function GET() {
         }
       },
       include: {
-        category: true
+        categories: {
+          include: {
+            category: true
+          }
+        }
       }
     })
 
-    // Calculate budget usage
-    const budgetOverview = await Promise.all(
-      currentBudgets.map(async (budget) => {
+    // Calculate budget usage for each category in each budget
+    const budgetOverview = []
+    for (const budget of currentBudgets) {
+      for (const budgetCategory of budget.categories) {
         const budgetTransactions = currentMonthTransactions.filter(
-          t => t.categoryId === budget.categoryId && t.type === 'EXPENSE'
+          t => t.categoryId === budgetCategory.categoryId && t.type === 'EXPENSE'
         )
         
         const currentSpent = budgetTransactions.reduce(
           (sum, t) => sum + Math.abs(Number(t.amount)), 0
         )
         
-        const percentageUsed = Number(budget.monthlyLimit) > 0 ? 
-          (currentSpent / Number(budget.monthlyLimit)) * 100 : 0
+        const effectiveLimit = Number(budgetCategory.monthlyLimit) + Number(budgetCategory.rolloverAmount)
+        const percentageUsed = effectiveLimit > 0 ? 
+          (currentSpent / effectiveLimit) * 100 : 0
 
-        return {
-          categoryName: budget.category.name,
-          categoryIcon: budget.category.icon,
-          categoryColor: budget.category.color,
+        budgetOverview.push({
+          categoryName: budgetCategory.category.name,
+          categoryIcon: budgetCategory.category.icon,
+          categoryColor: budgetCategory.category.color,
           percentageUsed: Math.round(percentageUsed),
           currentSpent,
-          monthlyLimit: Number(budget.monthlyLimit),
+          monthlyLimit: effectiveLimit,
           isOverBudget: percentageUsed > 100,
           isNearLimit: percentageUsed >= 80 && percentageUsed <= 100
-        }
-      })
-    )
+        })
+      }
+    }
 
     // Format recent transactions
     const formattedRecentTransactions = recentTransactions.map(transaction => ({

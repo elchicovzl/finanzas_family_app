@@ -37,12 +37,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Find the template
+    // Find the template with its categories
     const template = await prisma.budgetTemplate.findFirst({
       where: {
         id: validatedData.templateId,
         familyId: userFamilyMember.familyId,
         isActive: true
+      },
+      include: {
+        categories: {
+          include: {
+            category: {
+              select: {
+                name: true,
+                color: true,
+                icon: true
+              }
+            }
+          }
+        }
       }
     })
 
@@ -77,11 +90,11 @@ export async function POST(request: NextRequest) {
         endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0)
     }
 
-    // Check if budget already exists for this period
+    // Check if budget already exists for this period with same name
     const existingBudget = await prisma.budget.findFirst({
       where: {
         familyId: userFamilyMember.familyId,
-        categoryId: template.categoryId,
+        name: template.name,
         startDate: {
           gte: startDate,
           lt: endDate
@@ -96,61 +109,110 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create the budget from template
-    const budget = await prisma.budget.create({
-      data: {
-        familyId: userFamilyMember.familyId,
-        categoryId: template.categoryId,
-        name: template.name,
-        monthlyLimit: template.monthlyLimit,
-        period: template.period,
-        startDate: startDate,
-        endDate: endDate,
-        alertThreshold: template.alertThreshold,
-        templateId: template.id,
-        createdByUserId: session.user.id
-      },
+    // Create the budget from template with all categories
+    const budget = await prisma.$transaction(async (tx) => {
+      // Create the budget
+      const newBudget = await tx.budget.create({
+        data: {
+          familyId: userFamilyMember.familyId,
+          name: template.name,
+          totalBudget: template.totalBudget,
+          period: template.period,
+          startDate: startDate,
+          endDate: endDate,
+          alertThreshold: template.alertThreshold,
+          templateId: template.id,
+          createdByUserId: session.user.id
+        }
+      })
+
+      // Create budget categories from template categories
+      const budgetCategories = await Promise.all(
+        template.categories.map(templateCategory =>
+          tx.budgetCategory.create({
+            data: {
+              budgetId: newBudget.id,
+              categoryId: templateCategory.categoryId,
+              monthlyLimit: templateCategory.monthlyLimit,
+              enableRollover: templateCategory.enableRollover,
+              // TODO: Aquí implementaremos la lógica de rollover en el futuro
+              rolloverAmount: 0
+            }
+          })
+        )
+      )
+
+      // Update template's last generated date
+      await tx.budgetTemplate.update({
+        where: { id: template.id },
+        data: { lastGenerated: new Date() }
+      })
+
+      return { ...newBudget, categories: budgetCategories }
+    })
+
+    // Get complete budget with categories for response
+    const completeBudget = await prisma.budget.findUnique({
+      where: { id: budget.id },
       include: {
-        category: {
-          select: {
-            name: true,
-            color: true,
-            icon: true
+        categories: {
+          include: {
+            category: {
+              select: {
+                name: true,
+                color: true,
+                icon: true
+              }
+            }
           }
         }
       }
     })
 
-    // Update template's last generated date
-    await prisma.budgetTemplate.update({
-      where: { id: template.id },
-      data: { lastGenerated: new Date() }
-    })
-
     return NextResponse.json({
-      id: budget.id,
-      name: budget.name,
-      monthlyLimit: Number(budget.monthlyLimit),
-      currentSpent: 0,
-      remainingBudget: Number(budget.monthlyLimit),
-      percentageUsed: 0,
+      id: completeBudget!.id,
+      name: completeBudget!.name,
+      totalBudget: Number(completeBudget!.totalBudget),
+      totalSpent: 0,
+      totalRemaining: Number(completeBudget!.totalBudget),
+      totalPercentage: 0,
       isOverBudget: false,
       isNearLimit: false,
-      startDate: budget.startDate,
-      endDate: budget.endDate,
-      formattedLimit: new Intl.NumberFormat('es-CO', {
+      startDate: completeBudget!.startDate,
+      endDate: completeBudget!.endDate,
+      formattedTotalBudget: new Intl.NumberFormat('es-CO', {
         style: 'currency',
         currency: 'COP'
-      }).format(Number(budget.monthlyLimit)),
-      formattedSpent: new Intl.NumberFormat('es-CO', {
+      }).format(Number(completeBudget!.totalBudget)),
+      formattedTotalSpent: new Intl.NumberFormat('es-CO', {
         style: 'currency',
         currency: 'COP'
       }).format(0),
-      formattedRemaining: new Intl.NumberFormat('es-CO', {
+      formattedTotalRemaining: new Intl.NumberFormat('es-CO', {
         style: 'currency',
         currency: 'COP'
-      }).format(Number(budget.monthlyLimit)),
-      category: budget.category
+      }).format(Number(completeBudget!.totalBudget)),
+      categories: completeBudget!.categories.map(cat => ({
+        ...cat,
+        currentSpent: 0,
+        effectiveLimit: Number(cat.monthlyLimit) + Number(cat.rolloverAmount),
+        remainingBudget: Number(cat.monthlyLimit) + Number(cat.rolloverAmount),
+        percentageUsed: 0,
+        isOverBudget: false,
+        isNearLimit: false,
+        formattedLimit: new Intl.NumberFormat('es-CO', {
+          style: 'currency',
+          currency: 'COP'
+        }).format(Number(cat.monthlyLimit) + Number(cat.rolloverAmount)),
+        formattedSpent: new Intl.NumberFormat('es-CO', {
+          style: 'currency',
+          currency: 'COP'
+        }).format(0),
+        formattedRemaining: new Intl.NumberFormat('es-CO', {
+          style: 'currency',
+          currency: 'COP'
+        }).format(Number(cat.monthlyLimit) + Number(cat.rolloverAmount))
+      }))
     }, { status: 201 })
 
   } catch (error) {
