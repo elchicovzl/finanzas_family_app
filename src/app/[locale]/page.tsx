@@ -76,14 +76,14 @@ export default function HomePage() {
                 FAQ
               </Link>
             </nav>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <Link href="/signin">
-                <Button variant="ghost" className="hidden sm:inline-flex">
+                <Button variant="ghost" className="text-xs sm:text-sm">
                   Iniciar Sesión
                 </Button>
               </Link>
               <Link href="/signup">
-                <Button className="text-white cursor-pointer">Comenzar Gratis</Button>
+                <Button className="text-white cursor-pointer text-xs sm:text-sm">Comenzar Gratis</Button>
               </Link>
             </div>
           </div>
