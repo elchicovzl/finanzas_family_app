@@ -27,7 +27,26 @@ export async function GET() {
     })
 
     // Calculate total balance from bank accounts
-    const totalBalance = bankAccounts.reduce((sum, account) => sum + Number(account.balance), 0)
+    const bankAccountsBalance = bankAccounts.reduce((sum, account) => sum + Number(account.balance), 0)
+    
+    // Calculate balance from manual transactions (cash)
+    // Get all manual transactions for the family
+    const manualTransactions = await prisma.transaction.findMany({
+      where: {
+        familyId: familyContext.family.id,
+        source: 'MANUAL', // Only manual transactions (cash)
+        accountId: null   // Manual transactions don't have accountId
+      }
+    })
+    
+    // Calculate net balance from manual transactions
+    const manualBalance = manualTransactions.reduce((sum, transaction) => {
+      const amount = Number(transaction.amount)
+      return transaction.type === 'INCOME' ? sum + amount : sum - amount
+    }, 0)
+    
+    // Total balance = bank accounts balance + manual transactions balance
+    const totalBalance = bankAccountsBalance + manualBalance
 
     // Get current month transactions
     const currentMonthTransactions = await prisma.transaction.findMany({
