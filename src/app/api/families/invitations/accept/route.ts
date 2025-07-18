@@ -16,12 +16,43 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get user by email
-    const user = await prisma.user.findUnique({
+    // Get user by email or ID with retry logic for OAuth users
+    let user = await prisma.user.findUnique({
       where: { email: session.user.email }
     })
 
+    // If user not found by email, try by ID if available
+    if (!user && (session.user as any).id) {
+      user = await prisma.user.findUnique({
+        where: { id: (session.user as any).id }
+      })
+    }
+
+    // If user still not found, try a few more times with delay (for OAuth timing issues)
     if (!user) {
+      console.log('User not found on first attempt, retrying...')
+      for (let i = 0; i < 3; i++) {
+        await new Promise(resolve => setTimeout(resolve, 500)) // Wait 500ms
+        user = await prisma.user.findUnique({
+          where: { email: session.user.email }
+        })
+        if (!user && (session.user as any).id) {
+          user = await prisma.user.findUnique({
+            where: { id: (session.user as any).id }
+          })
+        }
+        if (user) {
+          console.log(`User found on retry attempt ${i + 1}`)
+          break
+        }
+      }
+    }
+
+    if (!user) {
+      console.error('User not found after retries:', { 
+        email: session.user.email, 
+        sessionUserId: (session.user as any).id 
+      })
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
