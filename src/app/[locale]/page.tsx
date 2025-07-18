@@ -83,7 +83,7 @@ export default function HomePage() {
                 </Button>
               </Link>
               <Link href="/signup">
-                <Button>Comenzar Gratis</Button>
+                <Button className="text-white cursor-pointer">Comenzar Gratis</Button>
               </Link>
             </div>
           </div>
@@ -112,7 +112,7 @@ export default function HomePage() {
               </div>
               <div className="flex justify-center">
                 <Link href="/signup">
-                  <Button size="lg" className="text-lg px-8 py-4">
+                  <Button size="lg" className="text-lg px-8 py-4 text-white cursor-pointer">
                     Comienza tu gestión familiar
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Button>

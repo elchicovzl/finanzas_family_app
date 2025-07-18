@@ -65,6 +65,27 @@ export async function getFamilyContext(): Promise<FamilyContext | null> {
     if (!primaryMembership) {
       try {
         const result = await prisma.$transaction(async (tx) => {
+          // Double-check if membership was created by another concurrent request
+          const existingMembership = await tx.familyMember.findFirst({
+            where: {
+              userId: user.id,
+              isActive: true
+            },
+            include: {
+              family: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          })
+
+          if (existingMembership) {
+            // Another concurrent request already created a family
+            return existingMembership
+          }
+
           // Create a default family for the user
           const family = await tx.family.create({
             data: {
@@ -99,7 +120,31 @@ export async function getFamilyContext(): Promise<FamilyContext | null> {
         console.log(`Auto-created default family for user ${user.email}`)
       } catch (error) {
         console.error('Error creating default family:', error)
-        return null
+        
+        // If creation failed, try to get existing membership one more time
+        // This handles cases where the family was created by another request
+        // but our transaction failed due to a race condition
+        primaryMembership = await prisma.familyMember.findFirst({
+          where: {
+            userId: user.id,
+            isActive: true
+          },
+          include: {
+            family: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          },
+          orderBy: {
+            joinedAt: 'asc'
+          }
+        })
+
+        if (!primaryMembership) {
+          return null
+        }
       }
     }
 

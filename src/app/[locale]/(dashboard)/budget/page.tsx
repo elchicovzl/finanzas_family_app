@@ -591,7 +591,7 @@ export default function BudgetPage() {
                   <p className="text-muted-foreground text-center mb-4">
                     {t('budget.noBudgetsCreatedDesc')}
                   </p>
-                  <Button onClick={() => router.push('/budget/new')}>
+                  <Button className="text-white cursor-pointer" onClick={() => router.push('/budget/new')}>
                     <Plus className="mr-2 h-4 w-4" />
                     {t('budget.createFirstBudget')}
                   </Button>
