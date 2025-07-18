@@ -180,7 +180,7 @@ export default function AddTransactionModal({
   }
 
   const defaultTrigger = (
-    <Button>
+    <Button className="text-white">
       <Plus className="mr-2 h-4 w-4" />
       {t('transactions.addTransaction')}
     </Button>

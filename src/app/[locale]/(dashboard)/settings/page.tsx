@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
 import { Settings, Globe, Palette, User, Bell, Shield } from 'lucide-react'
+import { PageLoader } from '@/components/ui/page-loader'
 
 export default function SettingsPage() {
   const { t, locale, changeLanguage, isLoading } = useTranslations()
@@ -22,14 +23,7 @@ export default function SettingsPage() {
 
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">{t('common.loading')}</p>
-        </div>
-      </div>
-    )
+    return <PageLoader size="md" fullScreen={false} />
   }
 
   return (

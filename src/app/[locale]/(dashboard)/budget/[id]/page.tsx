@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useTranslations } from '@/hooks/use-translations'
 import { translateCategories } from '@/lib/category-translations'
 import { toast } from 'sonner'
+import { PageLoader } from '@/components/ui/page-loader'
 
 interface BudgetCategory {
   id: string
@@ -132,14 +133,7 @@ export default function BudgetDetailPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex items-center space-x-2">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <span className="text-lg">{t('common.loading')}</span>
-        </div>
-      </div>
-    )
+    return <PageLoader />
   }
 
   if (!budget) {

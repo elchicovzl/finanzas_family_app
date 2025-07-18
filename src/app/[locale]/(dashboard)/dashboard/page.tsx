@@ -18,6 +18,7 @@ import { toast } from 'sonner'
 import AddTransactionModal from '@/components/AddTransactionModal'
 import { useFamilyStore } from '@/stores/family-store'
 import { useTranslations } from '@/hooks/use-translations'
+import { PageLoader } from '@/components/ui/page-loader'
 
 interface DashboardData {
   totalBalance: number
@@ -102,14 +103,7 @@ export default function DashboardPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-gray-600">{t('common.loading')}</p>
-        </div>
-      </div>
-    )
+    return <PageLoader />
   }
 
   return (

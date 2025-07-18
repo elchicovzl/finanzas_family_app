@@ -25,6 +25,8 @@ import {
   Activity
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { PageLoader } from '@/components/ui/page-loader'
+import { useTranslations } from '@/hooks/use-translations'
 
 interface BankAccount {
   id: string
@@ -41,6 +43,7 @@ interface BankAccount {
 }
 
 export default function AccountsPage() {
+  const { t, locale } = useTranslations()
   const [accounts, setAccounts] = useState<BankAccount[]>([])
   const [loading, setLoading] = useState(true)
   const [balancesVisible, setBalancesVisible] = useState(true)
@@ -75,7 +78,8 @@ export default function AccountsPage() {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-CO', {
+    const localeCode = locale === 'es' ? 'es-CO' : 'en-US'
+    return new Date(dateString).toLocaleDateString(localeCode, {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -124,7 +128,7 @@ export default function AccountsPage() {
       } else {
         const errorData = await response.json()
         console.error('API Error:', errorData)
-        alert(`Error: ${errorData.error || 'Failed to initiate connection'}`)
+        alert(`Error: ${errorData.error || t('accounts.failedToInitiate')}`)
       }
     } catch (error) {
       console.error('Error connecting to Bancolombia:', error)
@@ -162,14 +166,14 @@ export default function AccountsPage() {
       } else {
         const errorData = await response.json()
         console.error('Link creation error:', errorData)
-        toast.error('Error connecting account', {
-          description: errorData.error || 'Failed to connect to Bancolombia. Please try again.'
+        toast.error(t('accounts.errorConnectingAccount'), {
+          description: errorData.error || t('accounts.connectionFailedDescription')
         })
       }
     } catch (error) {
       console.error('Error creating link:', error)
-      toast.error('Connection failed', {
-        description: 'Unable to connect to Bancolombia. Please check your credentials.'
+      toast.error(t('accounts.connectionFailed'), {
+        description: t('accounts.connectionFailedDescription')
       })
     } finally {
       setConnecting(false)
@@ -177,11 +181,7 @@ export default function AccountsPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-      </div>
-    )
+    return <PageLoader />
   }
 
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0)
@@ -191,9 +191,9 @@ export default function AccountsPage() {
     <div className="space-y-8">
       <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
         <div className="flex-1">
-          <h2 className="text-3xl font-bold tracking-tight">Bank Accounts</h2>
+          <h2 className="text-3xl font-bold tracking-tight">{t('accounts.title')}</h2>
           <p className="text-muted-foreground">
-            Manage your connected bank accounts and view balances
+            {t('accounts.description')}
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -201,36 +201,36 @@ export default function AccountsPage() {
             {balancesVisible ? (
               <>
                 <EyeOff className="mr-2 h-4 w-4" />
-                Hide Balances
+                {t('common.hide')}
               </>
             ) : (
               <>
                 <Eye className="mr-2 h-4 w-4" />
-                Show Balances
+                {t('common.show')}
               </>
             )}
           </Button>
           <Dialog>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="text-white">
                 <Plus className="mr-2 h-4 w-4" />
-                Connect Account
+                {t('accounts.connectAccount')}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Connect Bank Account</DialogTitle>
+                <DialogTitle>{t('accounts.connectBankAccount')}</DialogTitle>
                 <DialogDescription>
-                  Connect your Bancolombia account to start tracking your finances
+                  {t('accounts.description')}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 {!showCredentialsForm ? (
                   <div className="text-center py-8">
                     <Building className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Belvo Integration</h3>
+                    <h3 className="text-lg font-semibold mb-2">{t('accounts.belvoIntegration')}</h3>
                     <p className="text-muted-foreground mb-4">
-                      Connect securely with your bank through Belvo&apos;s API
+                      {t('accounts.belvoDescription')}
                     </p>
                     <Button 
                       className="w-full" 
@@ -238,25 +238,25 @@ export default function AccountsPage() {
                       disabled={connecting}
                     >
                       <CreditCard className="mr-2 h-4 w-4" />
-                      {connecting ? 'Connecting...' : 'Connect Bancolombia'}
+                      {connecting ? t('accounts.connecting') : t('accounts.connectBancolombia')}
                     </Button>
                   </div>
                 ) : (
                   <form onSubmit={handleCredentialsSubmit} className="space-y-4">
                     <div className="text-center mb-4">
                       <Building className="h-12 w-12 text-blue-600 mx-auto mb-2" />
-                      <h3 className="text-lg font-semibold">Connect to Bancolombia</h3>
+                      <h3 className="text-lg font-semibold">{t('accounts.connectToBancolombia')}</h3>
                       <p className="text-sm text-muted-foreground">
-                        Enter your Bancolombia online banking credentials
+                        {t('accounts.credentialsRequired')}
                       </p>
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="username">Username / Document</Label>
+                      <Label htmlFor="username">{t('accounts.username')}</Label>
                       <Input
                         id="username"
                         type="text"
-                        placeholder="Your Bancolombia username"
+                        placeholder={t('accounts.usernamePlaceholder')}
                         value={credentials.username}
                         onChange={(e) => setCredentials(prev => ({ ...prev, username: e.target.value }))}
                         required
@@ -264,11 +264,11 @@ export default function AccountsPage() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="password">Password</Label>
+                      <Label htmlFor="password">{t('accounts.password')}</Label>
                       <Input
                         id="password"
                         type="password"
-                        placeholder="Your Bancolombia password"
+                        placeholder={t('accounts.passwordPlaceholder')}
                         value={credentials.password}
                         onChange={(e) => setCredentials(prev => ({ ...prev, password: e.target.value }))}
                         required
@@ -276,8 +276,7 @@ export default function AccountsPage() {
                     </div>
                     
                     <div className="text-xs text-muted-foreground bg-blue-50 p-3 rounded">
-                      🔒 Your credentials are encrypted and securely transmitted to Belvo. 
-                      We do not store your banking credentials.
+                      🔒 {t('accounts.secureDescription')}
                     </div>
                     
                     <div className="flex space-x-2">
@@ -290,14 +289,14 @@ export default function AccountsPage() {
                           setCredentials({ username: '', password: '' })
                         }}
                       >
-                        Cancel
+                        {t('accounts.cancel')}
                       </Button>
                       <Button 
                         type="submit" 
                         className="flex-1"
                         disabled={connecting}
                       >
-                        {connecting ? 'Connecting...' : 'Connect'}
+                        {connecting ? t('accounts.connecting') : t('accounts.connect')}
                       </Button>
                     </div>
                   </form>
@@ -311,13 +310,13 @@ export default function AccountsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('accounts.totalBalance')}</CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {balancesVisible 
-                ? new Intl.NumberFormat('es-CO', {
+                ? new Intl.NumberFormat(locale === 'es' ? 'es-CO' : 'en-US', {
                     style: 'currency',
                     currency: 'COP'
                   }).format(totalBalance)
@@ -325,45 +324,45 @@ export default function AccountsPage() {
               }
             </div>
             <p className="text-xs text-muted-foreground">
-              Across all accounts
+              {t('budget.acrossAllBudgets')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Accounts</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('accounts.activeAccounts')}</CardTitle>
             <Building className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{activeAccounts}</div>
             <p className="text-xs text-muted-foreground">
-              Connected and syncing
+              {t('accounts.connected')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Last Sync</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('accounts.lastSync')}</CardTitle>
             <RefreshCw className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {accounts.length > 0 && accounts[0].lastSyncAt
                 ? formatDate(accounts[0].lastSyncAt).split(' ')[0]
-                : 'Never'
+                : t('accounts.never')
               }
             </div>
             <p className="text-xs text-muted-foreground">
-              Most recent update
+              {t('accounts.lastSync')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Transactions</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('accounts.transactions')}</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -371,7 +370,7 @@ export default function AccountsPage() {
               {accounts.reduce((sum, account) => sum + account.transactionCount, 0)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Total imported
+              {t('common.total')}
             </p>
           </CardContent>
         </Card>
@@ -395,13 +394,13 @@ export default function AccountsPage() {
                     </div>
                   </div>
                   <Badge variant={account.isActive ? 'default' : 'secondary'}>
-                    {account.isActive ? 'Active' : 'Inactive'}
+                    {account.isActive ? t('accounts.active') : t('accounts.inactive')}
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <div className="text-sm text-muted-foreground">Current Balance</div>
+                  <div className="text-sm text-muted-foreground">{t('accounts.currentBalance')}</div>
                   <div className="text-2xl font-bold">
                     {balancesVisible 
                       ? account.formattedBalance
@@ -412,31 +411,31 @@ export default function AccountsPage() {
 
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <div className="text-muted-foreground">Account Type</div>
+                    <div className="text-muted-foreground">{t('accounts.accountType')}</div>
                     <div className="font-medium capitalize">{account.accountType}</div>
                   </div>
                   <div>
-                    <div className="text-muted-foreground">Currency</div>
+                    <div className="text-muted-foreground">{t('accounts.currency')}</div>
                     <div className="font-medium">{account.currency}</div>
                   </div>
                 </div>
 
                 <div className="border-t pt-4 space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Transactions</span>
+                    <span className="text-muted-foreground">{t('accounts.transactions')}</span>
                     <span className="font-medium">{account.transactionCount}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Last Sync</span>
+                    <span className="text-muted-foreground">{t('accounts.lastSync')}</span>
                     <span className="font-medium">
                       {account.lastSyncAt 
                         ? formatDate(account.lastSyncAt)
-                        : 'Never'
+                        : t('accounts.never')
                       }
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Connected</span>
+                    <span className="text-muted-foreground">{t('accounts.connected')}</span>
                     <span className="font-medium">
                       {formatDate(account.createdAt)}
                     </span>
@@ -446,11 +445,11 @@ export default function AccountsPage() {
                 <div className="flex space-x-2">
                   <Button variant="outline" size="sm" className="flex-1">
                     <RefreshCw className="mr-2 h-4 w-4" />
-                    Sync
+                    {t('accounts.sync')}
                   </Button>
                   <Button variant="outline" size="sm" className="flex-1">
                     <Eye className="mr-2 h-4 w-4" />
-                    Details
+                    {t('accounts.details')}
                   </Button>
                 </div>
               </CardContent>
@@ -461,29 +460,29 @@ export default function AccountsPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <CreditCard className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No accounts connected</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('accounts.noAccountsTitle')}</h3>
             <p className="text-muted-foreground text-center mb-4">
-              Connect your first bank account to start tracking your finances
+              {t('accounts.noAccountsDescription')}
             </p>
             <Dialog>
               <DialogTrigger asChild>
-                <Button>
+                <Button className="text-white">
                   <Plus className="mr-2 h-4 w-4" />
-                  Connect Your First Account
+                  {t('accounts.connectAccount')}
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Connect Bank Account</DialogTitle>
+                  <DialogTitle>{t('accounts.connectBankAccount')}</DialogTitle>
                   <DialogDescription>
-                    Connect your Bancolombia account through Belvo
+                    {t('accounts.belvoDescription')}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="text-center py-8">
                   <Building className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Secure Bank Connection</h3>
+                  <h3 className="text-lg font-semibold mb-2">{t('accounts.secureBankConnection')}</h3>
                   <p className="text-muted-foreground mb-4">
-                    Connect safely with bank-level security through Belvo API
+                    {t('accounts.secureDescription')}
                   </p>
                   <Button 
                     className="w-full"
@@ -491,7 +490,7 @@ export default function AccountsPage() {
                     disabled={connecting}
                   >
                     <CreditCard className="mr-2 h-4 w-4" />
-                    {connecting ? 'Connecting...' : 'Connect Bancolombia Account'}
+                    {connecting ? t('accounts.connecting') : t('accounts.connectBancolombiaAccount')}
                   </Button>
                 </div>
               </DialogContent>

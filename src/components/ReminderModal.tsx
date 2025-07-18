@@ -150,7 +150,7 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
     today.setHours(0, 0, 0, 0)
     
     if (formData.dueDate < today) {
-      toast.error('La fecha de vencimiento no puede ser anterior a hoy')
+      toast.error(t('reminders.modal.pastDateError'))
       return
     }
 
@@ -186,16 +186,16 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
       })
 
       if (response.ok) {
-        toast.success(editingReminder ? 'Recordatorio actualizado' : 'Recordatorio creado')
+        toast.success(editingReminder ? t('reminders.modal.updateSuccess') : t('reminders.modal.createSuccess'))
         onSuccess()
         onOpenChange(false)
       } else {
         const error = await response.json()
-        toast.error(error.error || 'Error al guardar recordatorio')
+        toast.error(error.error || t('reminders.modal.saveError'))
       }
     } catch (error) {
       console.error('Error saving reminder:', error)
-      toast.error('Error al guardar recordatorio')
+      toast.error(t('reminders.modal.saveError'))
     } finally {
       setLoading(false)
     }
@@ -206,12 +206,12 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
       <DialogContent className="sm:max-w-[600px] w-[95vw] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>
-            {editingReminder ? 'Editar Recordatorio' : 'Nuevo Recordatorio'}
+            {editingReminder ? t('reminders.modal.editReminder') : t('reminders.modal.newReminder')}
           </DialogTitle>
           <DialogDescription>
             {editingReminder 
-              ? 'Modifica los detalles del recordatorio'
-              : 'Crea un nuevo recordatorio de pago'
+              ? t('reminders.modal.editDescription')
+              : t('reminders.modal.newDescription')
             }
           </DialogDescription>
         </DialogHeader>
@@ -219,24 +219,24 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor="title">Título *</Label>
+            <Label htmlFor="title">{t('reminders.modal.titleLabel')}</Label>
             <Input
               id="title"
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              placeholder="Ej: Pago de servicios públicos"
+              placeholder={t('reminders.modal.titlePlaceholder')}
               required
             />
           </div>
 
           {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="description">Descripción</Label>
+            <Label htmlFor="description">{t('reminders.modal.descriptionLabel')}</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Detalles adicionales sobre este recordatorio..."
+              placeholder={t('reminders.modal.descriptionPlaceholder')}
               rows={3}
             />
           </div>
@@ -244,22 +244,22 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
           {/* Amount and Category */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="amount">Monto (opcional)</Label>
+              <Label htmlFor="amount">{t('reminders.modal.amountLabel')}</Label>
               <Input
                 id="amount"
                 type="number"
                 step="0.01"
                 value={formData.amount}
                 onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                placeholder="0.00"
+                placeholder={t('reminders.modal.amountPlaceholder')}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="categoryId">Categoría</Label>
+              <Label htmlFor="categoryId">{t('reminders.modal.categoryLabel')}</Label>
               <Select value={formData.categoryId} onValueChange={(value) => setFormData(prev => ({ ...prev, categoryId: value }))}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Seleccionar categoría" />
+                  <SelectValue placeholder={t('common.category')} />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((category) => (
@@ -279,7 +279,7 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
           <div className="space-y-4">
             {/* Due Date - Full width on mobile */}
             <div className="space-y-2">
-              <Label>Fecha de vencimiento *</Label>
+              <Label>{t('reminders.modal.dueDateLabel')}</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -290,7 +290,7 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.dueDate ? format(formData.dueDate, "dd/MM/yyyy", { locale: es }) : "Seleccionar fecha"}
+                    {formData.dueDate ? format(formData.dueDate, "dd/MM/yyyy", { locale: es }) : t('reminders.modal.selectDate')}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
@@ -307,7 +307,7 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
             {/* Time, Priority and Notify Days - responsive grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="reminderTime">Hora de recordatorio</Label>
+                <Label htmlFor="reminderTime">{t('reminders.modal.reminderTimeLabel')}</Label>
                 <Input
                   id="reminderTime"
                   type="time"
@@ -318,30 +318,30 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="priority">Prioridad</Label>
+                <Label htmlFor="priority">{t('reminders.modal.priorityLabel')}</Label>
                 <Select value={formData.priority} onValueChange={(value: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT') => setFormData(prev => ({ ...prev, priority: value }))}>
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="LOW">
-                      <Badge className="bg-green-100 text-green-800">Baja</Badge>
+                      <Badge className="bg-green-100 text-green-800">{t('reminders.low')}</Badge>
                     </SelectItem>
                     <SelectItem value="MEDIUM">
-                      <Badge className="bg-yellow-100 text-yellow-800">Media</Badge>
+                      <Badge className="bg-yellow-100 text-yellow-800">{t('reminders.medium')}</Badge>
                     </SelectItem>
                     <SelectItem value="HIGH">
-                      <Badge className="bg-orange-100 text-orange-800">Alta</Badge>
+                      <Badge className="bg-orange-100 text-orange-800">{t('reminders.high')}</Badge>
                     </SelectItem>
                     <SelectItem value="URGENT">
-                      <Badge className="bg-red-100 text-red-800">Urgente</Badge>
+                      <Badge className="bg-red-100 text-red-800">{t('reminders.urgent')}</Badge>
                     </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="notifyDaysBefore">Notificar días antes</Label>
+                <Label htmlFor="notifyDaysBefore">{t('reminders.modal.notifyDaysBeforeLabel')}</Label>
                 <Select value={formData.notifyDaysBefore} onValueChange={(value) => setFormData(prev => ({ ...prev, notifyDaysBefore: value }))}>
                   <SelectTrigger className="w-full">
                     <SelectValue />
@@ -369,7 +369,7 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
               />
               <Label htmlFor="isRecurring" className="flex items-center gap-2">
                 <RefreshCw className="w-4 h-4" />
-                Recordatorio recurrente
+                {t('reminders.modal.recurringLabel')}
               </Label>
             </div>
 
@@ -377,23 +377,23 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
               <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="recurrenceType">Frecuencia</Label>
+                    <Label htmlFor="recurrenceType">{t('reminders.modal.frequencyLabel')}</Label>
                     <Select value={formData.recurrenceType} onValueChange={(value) => setFormData(prev => ({ ...prev, recurrenceType: value }))}>
                       <SelectTrigger className="w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="DAILY">Diario</SelectItem>
-                        <SelectItem value="WEEKLY">Semanal</SelectItem>
-                        <SelectItem value="MONTHLY">Mensual</SelectItem>
-                        <SelectItem value="QUARTERLY">Trimestral</SelectItem>
-                        <SelectItem value="YEARLY">Anual</SelectItem>
+                        <SelectItem value="DAILY">{t('reminders.daily')}</SelectItem>
+                        <SelectItem value="WEEKLY">{t('reminders.weekly')}</SelectItem>
+                        <SelectItem value="MONTHLY">{t('reminders.monthly')}</SelectItem>
+                        <SelectItem value="QUARTERLY">{t('reminders.quarterly')}</SelectItem>
+                        <SelectItem value="YEARLY">{t('reminders.yearly')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="recurrenceInterval">Intervalo</Label>
+                    <Label htmlFor="recurrenceInterval">{t('reminders.modal.intervalLabel')}</Label>
                     <Select value={formData.recurrenceInterval} onValueChange={(value) => setFormData(prev => ({ ...prev, recurrenceInterval: value }))}>
                       <SelectTrigger className="w-full">
                         <SelectValue />
@@ -410,7 +410,7 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Fecha de finalización (opcional)</Label>
+                  <Label>{t('reminders.modal.endDateLabel')}</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -423,7 +423,7 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {formData.recurrenceEndDate 
                           ? format(formData.recurrenceEndDate, "PPP", { locale: es }) 
-                          : "Sin fecha de finalización"
+                          : t('reminders.modal.selectEndDate')
                         }
                       </Button>
                     </PopoverTrigger>
@@ -454,14 +454,14 @@ export function ReminderModal({ isOpen, onOpenChange, onSuccess, editingReminder
               disabled={loading}
               className="w-full sm:w-auto order-2 sm:order-1"
             >
-              Cancelar
+              {t('reminders.modal.cancel')}
             </Button>
             <Button 
               type="submit" 
               disabled={loading}
-              className="w-full sm:w-auto order-1 sm:order-2"
+              className="w-full sm:w-auto order-1 sm:order-2 text-white cursor-pointer"
             >
-              {loading ? 'Guardando...' : editingReminder ? 'Actualizar' : 'Crear Recordatorio'}
+              {loading ? t('reminders.modal.saving') : editingReminder ? t('reminders.modal.update') : t('reminders.modal.create')}
             </Button>
           </div>
         </form>
