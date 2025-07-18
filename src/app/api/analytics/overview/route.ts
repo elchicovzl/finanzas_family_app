@@ -82,19 +82,19 @@ export async function GET() {
     // Calculate monthly income and expenses
     const currentMonthIncome = currentMonthTransactions
       .filter(t => t.type === 'INCOME')
-      .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0)
+      .reduce((sum, t) => sum + Number(t.amount), 0)
 
     const currentMonthExpenses = currentMonthTransactions
       .filter(t => t.type === 'EXPENSE')
-      .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0)
+      .reduce((sum, t) => sum + Number(t.amount), 0)
 
     const lastMonthIncome = lastMonthTransactions
       .filter(t => t.type === 'INCOME')
-      .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0)
+      .reduce((sum, t) => sum + Number(t.amount), 0)
 
     const lastMonthExpenses = lastMonthTransactions
       .filter(t => t.type === 'EXPENSE')
-      .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0)
+      .reduce((sum, t) => sum + Number(t.amount), 0)
 
     // Calculate percentage changes
     const incomeChange = lastMonthIncome > 0 ? 
@@ -150,7 +150,7 @@ export async function GET() {
         )
         
         const currentSpent = budgetTransactions.reduce(
-          (sum, t) => sum + Math.abs(Number(t.amount)), 0
+          (sum, t) => sum + Number(t.amount), 0
         )
         
         const effectiveLimit = Number(budgetCategory.monthlyLimit) + Number(budgetCategory.rolloverAmount)
