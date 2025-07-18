@@ -16,6 +16,7 @@ import { toast } from 'sonner'
 import { useFamilyStore } from '@/stores/family-store'
 import { useTranslations } from '@/hooks/use-translations'
 import { translateCategories } from '@/lib/category-translations'
+import { PageLoader } from '@/components/ui/page-loader'
 
 interface BudgetCategory {
   id: string
@@ -292,11 +293,7 @@ export default function BudgetPage() {
 
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-      </div>
-    )
+    return <PageLoader />
   }
 
   const totalBudget = budgets.reduce((sum, budget) => sum + Number(budget.totalBudget), 0)
@@ -315,13 +312,14 @@ export default function BudgetPage() {
         </div>
         <div className="flex space-x-2">
           <Button 
+            className="cursor-pointer"
             variant="outline" 
             onClick={() => router.push('/budget/templates/new')}
           >
             <LayoutTemplate className="mr-2 h-4 w-4" />
             {t('budget.createTemplate')}
           </Button>
-          <Button onClick={() => router.push('/budget/new')}>
+          <Button className="text-white cursor-pointer" onClick={() => router.push('/budget/new')}>
             <Plus className="mr-2 h-4 w-4" />
             {t('budget.createBudget')}
           </Button>
@@ -397,14 +395,14 @@ export default function BudgetPage() {
       <div className="flex items-center space-x-2 mb-6">
         <Badge 
           variant={activeTab === 'budgets' ? 'default' : 'secondary'}
-          className="cursor-pointer px-4 py-2 text-sm font-medium transition-colors hover:bg-primary/80"
+          className="text-white cursor-pointer px-4 py-2 text-sm font-medium transition-colors hover:bg-primary/80"
           onClick={() => setActiveTab('budgets')}
         >
           {t('budget.activeBudgets')}
         </Badge>
         <Badge 
           variant={activeTab === 'templates' ? 'default' : 'secondary'}
-          className="cursor-pointer px-4 py-2 text-sm font-medium transition-colors hover:bg-primary/80"
+          className="text-white cursor-pointer px-4 py-2 text-sm font-medium transition-colors hover:bg-primary/80"
           onClick={() => setActiveTab('templates')}
         >
           {t('budget.templates.title')}

@@ -11,6 +11,7 @@ import { ArrowLeft, Target, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from '@/hooks/use-translations'
 import MultiCategoryForm from '@/components/budget/multi-category-form'
+import { PageLoader } from '@/components/ui/page-loader'
 
 interface BudgetCategory {
   id: string
@@ -145,14 +146,7 @@ export default function EditBudgetPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex items-center space-x-2">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <span className="text-lg">{t('common.loading')}</span>
-        </div>
-      </div>
-    )
+    return <PageLoader />
   }
 
   if (!budget) {

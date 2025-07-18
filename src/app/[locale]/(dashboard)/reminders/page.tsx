@@ -14,6 +14,7 @@ import { Plus, Calendar as CalendarIcon, List, CheckCircle, Clock, AlertTriangle
 import { toast } from 'sonner'
 import ReminderModal from '@/components/ReminderModal'
 import { useTranslations } from '@/hooks/use-translations'
+import { PageLoader } from '@/components/ui/page-loader'
 
 // Set moment locale dynamically
 const localizer = momentLocalizer(moment)
@@ -356,11 +357,7 @@ export default function RemindersPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    )
+    return <PageLoader />
   }
 
   return (
@@ -372,7 +369,7 @@ export default function RemindersPage() {
             {t('reminders.description')}
           </p>
         </div>
-        <Button onClick={handleNewReminder}>
+        <Button className="text-white cursor-pointer" onClick={handleNewReminder}>
           <Plus className="w-4 h-4 mr-2" />
           {t('reminders.newReminder')}
         </Button>

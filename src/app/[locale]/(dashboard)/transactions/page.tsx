@@ -22,6 +22,7 @@ import { useSession } from 'next-auth/react'
 import { toast } from 'sonner'
 import { DeleteConfirmationModal } from '@/components/ui/delete-confirmation-modal'
 import { CategoryFilter } from '@/components/CategoryFilter'
+import { PageLoader } from '@/components/ui/page-loader'
 
 interface Transaction {
   id: string
@@ -274,9 +275,7 @@ export default function TransactionsPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-            </div>
+            <PageLoader size="md" fullScreen={false} />
           ) : (
             <div className="space-y-4">
               <Table>

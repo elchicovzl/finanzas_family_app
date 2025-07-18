@@ -36,6 +36,7 @@ import {
   Mail
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { PageLoader } from '@/components/ui/page-loader'
 
 interface FamilyMember {
   id: string
@@ -213,13 +214,7 @@ export function FamilyMemberList() {
   }
 
   if (loading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        </CardContent>
-      </Card>
-    )
+    return <PageLoader size="md" fullScreen={false} />
   }
 
   return (
