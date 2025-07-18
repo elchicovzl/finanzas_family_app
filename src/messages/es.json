@@ -22,7 +22,13 @@
       "signUp": "Regístrate",
       "signingIn": "Iniciando sesión...",
       "invalidCredentials": "Credenciales inválidas",
-      "error": "Ocurrió un error. Inténtalo de nuevo."
+      "error": "Ocurrió un error. Inténtalo de nuevo.",
+      "validation": {
+        "emailRequired": "El email es requerido",
+        "emailInvalid": "Por favor ingresa un email válido",
+        "passwordRequired": "La contraseña es requerida"
+      },
+      "forgotPassword": "¿Olvidaste tu contraseña?"
     },
     "signup": {
       "title": "Crear Cuenta",
@@ -39,7 +45,57 @@
       "passwordMismatch": "Las contraseñas no coinciden",
       "hasAccount": "¿Ya tienes una cuenta?",
       "signIn": "Iniciar sesión",
-      "error": "Ocurrió un error. Inténtalo de nuevo."
+      "error": "Ocurrió un error. Inténtalo de nuevo.",
+      "validation": {
+        "nameRequired": "El nombre completo es requerido",
+        "nameMinLength": "El nombre debe tener al menos 2 caracteres",
+        "emailRequired": "El email es requerido",
+        "emailInvalid": "Por favor ingresa un email válido",
+        "passwordRequired": "La contraseña es requerida",
+        "passwordMinLength": "La contraseña debe tener al menos 6 caracteres",
+        "confirmPasswordRequired": "La confirmación de contraseña es requerida",
+        "passwordMismatch": "Las contraseñas no coinciden",
+        "termsRequired": "Debes aceptar los términos y condiciones"
+      },
+      "terms": {
+        "acceptTerms": "Acepto los",
+        "termsAndConditions": "Términos y Condiciones",
+        "termsLink": "términos y condiciones"
+      }
+    },
+    "forgotPassword": {
+      "title": "Recuperar Contraseña",
+      "description": "Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña",
+      "email": "Email",
+      "emailPlaceholder": "tu@ejemplo.com",
+      "sendButton": "Enviar Enlace",
+      "sending": "Enviando...",
+      "backToSignin": "Volver al inicio de sesión",
+      "emailSent": "Email enviado",
+      "emailSentDescription": "Si el email existe en nuestro sistema, recibirás un enlace para restablecer tu contraseña en los próximos minutos.",
+      "validation": {
+        "emailRequired": "El email es requerido",
+        "emailInvalid": "Por favor ingresa un email válido"
+      }
+    },
+    "resetPassword": {
+      "title": "Restablecer Contraseña", 
+      "description": "Ingresa tu nueva contraseña",
+      "newPassword": "Nueva Contraseña",
+      "confirmPassword": "Confirmar Nueva Contraseña",
+      "resetButton": "Restablecer Contraseña",
+      "resetting": "Restableciendo...",
+      "success": "Contraseña restablecida exitosamente",
+      "successDescription": "Tu contraseña ha sido actualizada. Ahora puedes iniciar sesión con tu nueva contraseña.",
+      "backToSignin": "Ir al inicio de sesión",
+      "invalidToken": "Enlace inválido o expirado",
+      "invalidTokenDescription": "El enlace de restablecimiento de contraseña es inválido o ha expirado. Solicita un nuevo enlace.",
+      "validation": {
+        "passwordRequired": "La nueva contraseña es requerida",
+        "passwordMinLength": "La contraseña debe tener al menos 6 caracteres",
+        "confirmPasswordRequired": "La confirmación de contraseña es requerida",
+        "passwordMismatch": "Las contraseñas no coinciden"
+      }
     }
   },
   "categories": {

@@ -57,27 +57,55 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user, account }) {
-      // Check if this is a new Google user by looking for existing accounts
+      // Check if this is a new Google user who hasn't received welcome email
       if (account?.provider === 'google' && user.email && user.name) {
-        const existingAccounts = await prisma.account.findMany({
-          where: { userId: user.id }
+        // Check if user has already received welcome email
+        const userFromDb = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { 
+            id: true, 
+            welcomeEmailSent: true,
+            createdAt: true
+          }
         })
         
-        const isNewUser = existingAccounts.length === 1 // Only the Google account just created
-        
-        if (isNewUser) {
-          const loginUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/dashboard`
+        if (userFromDb) {
+          const needsWelcomeEmail = !userFromDb.welcomeEmailSent
           
-          // Create welcome email job asynchronously
-          createWelcomeEmailJob({
-            to: user.email,
-            userName: user.name,
-            isGoogleSignup: true,
-            loginUrl
-          }).catch(error => {
-            console.error('Failed to create welcome email job for Google signup:', error)
-            // Don't fail the signin if job creation fails
+          console.log('Google sign-in check:', {
+            userId: user.id,
+            email: user.email,
+            userCreatedAt: userFromDb.createdAt,
+            welcomeEmailSent: userFromDb.welcomeEmailSent,
+            needsWelcomeEmail
           })
+          
+          if (needsWelcomeEmail) {
+            const loginUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/dashboard`
+            
+            console.log('🎉 New Google user detected, creating welcome email job')
+            
+            // Create welcome email job asynchronously
+            createWelcomeEmailJob({
+              to: user.email,
+              userName: user.name,
+              isGoogleSignup: true,
+              loginUrl
+            }).then(async () => {
+              // Mark welcome email as sent
+              await prisma.user.update({
+                where: { id: user.id },
+                data: { welcomeEmailSent: true }
+              }).catch(error => {
+                console.error('Failed to mark welcome email as sent:', error)
+              })
+            }).catch(error => {
+              console.error('Failed to create welcome email job for Google signup:', error)
+              // Don't fail the signin if job creation fails
+            })
+          } else {
+            console.log('🔄 Returning Google user, no welcome email needed')
+          }
         }
       }
       return true

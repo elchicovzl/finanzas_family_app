@@ -169,9 +169,67 @@ export function FamilySelector() {
 
   if (!currentFamily) {
     return (
-      <div className="flex items-center space-x-2">
-        <Users className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">{t('family.familySelector.noFamilySelected')}</span>
+      <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2">
+          <Users className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">{t('family.familySelector.noFamilySelected')}</span>
+        </div>
+        
+        {/* Create Family Button - Always visible when no family exists */}
+        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Plus className="h-4 w-4" />
+              <span className="ml-2 hidden sm:inline">{t('family.createFamily')}</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t('family.createFamilyModal.title')}</DialogTitle>
+              <DialogDescription>
+                {t('family.createFamilyModal.description')}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleCreateFamily} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">{t('family.createFamilyModal.familyName')}</Label>
+                <Input
+                  id="name"
+                  placeholder={t('family.createFamilyModal.familyNamePlaceholder')}
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">{t('family.createFamilyModal.description')}</Label>
+                <Input
+                  id="description"
+                  placeholder={t('family.createFamilyModal.descriptionPlaceholder')}
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                />
+              </div>
+              <div className="flex space-x-2">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => setCreateDialogOpen(false)}
+                >
+                  {t('family.createFamilyModal.cancel')}
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="flex-1"
+                  disabled={loading}
+                >
+                  {loading ? t('family.createFamilyModal.creating') : t('family.createFamilyModal.create')}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     )
   }

@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
         name,
         email,
         password: hashedPassword,
+        welcomeEmailSent: true, // Mark as sent since we're sending it right now
       },
     })
     console.log('✅ User created successfully with ID:', user.id)

@@ -22,7 +22,47 @@
       "signUp": "Sign up",
       "signingIn": "Signing in...",
       "invalidCredentials": "Invalid credentials",
-      "error": "An error occurred. Please try again."
+      "error": "An error occurred. Please try again.",
+      "validation": {
+        "emailRequired": "Email is required",
+        "emailInvalid": "Please enter a valid email",
+        "passwordRequired": "Password is required"
+      },
+      "forgotPassword": "Forgot your password?"
+    },
+    "forgotPassword": {
+      "title": "Recover Password",
+      "description": "Enter your email and we'll send you a link to reset your password",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "sendButton": "Send Link",
+      "sending": "Sending...",
+      "backToSignin": "Back to sign in",
+      "emailSent": "Email sent",
+      "emailSentDescription": "If the email exists in our system, you'll receive a password reset link in the next few minutes.",
+      "validation": {
+        "emailRequired": "Email is required",
+        "emailInvalid": "Please enter a valid email"
+      }
+    },
+    "resetPassword": {
+      "title": "Reset Password",
+      "description": "Enter your new password",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm New Password",
+      "resetButton": "Reset Password",
+      "resetting": "Resetting...",
+      "success": "Password reset successfully",
+      "successDescription": "Your password has been updated. You can now sign in with your new password.",
+      "backToSignin": "Go to sign in",
+      "invalidToken": "Invalid or expired link",
+      "invalidTokenDescription": "The password reset link is invalid or has expired. Please request a new link.",
+      "validation": {
+        "passwordRequired": "New password is required",
+        "passwordMinLength": "Password must be at least 6 characters long",
+        "confirmPasswordRequired": "Password confirmation is required",
+        "passwordMismatch": "Passwords do not match"
+      }
     },
     "signup": {
       "title": "Create Account",
@@ -39,7 +79,23 @@
       "passwordMismatch": "Passwords do not match",
       "hasAccount": "Already have an account?",
       "signIn": "Sign in",
-      "error": "An error occurred. Please try again."
+      "error": "An error occurred. Please try again.",
+      "validation": {
+        "nameRequired": "Full name is required",
+        "nameMinLength": "Name must be at least 2 characters long",
+        "emailRequired": "Email is required",
+        "emailInvalid": "Please enter a valid email",
+        "passwordRequired": "Password is required",
+        "passwordMinLength": "Password must be at least 6 characters long",
+        "confirmPasswordRequired": "Password confirmation is required",
+        "passwordMismatch": "Passwords do not match",
+        "termsRequired": "You must accept the terms and conditions"
+      },
+      "terms": {
+        "acceptTerms": "I accept the",
+        "termsAndConditions": "Terms and Conditions",
+        "termsLink": "terms and conditions"
+      }
     }
   },
   "categories": {

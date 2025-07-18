@@ -3,20 +3,20 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useTranslations } from '@/hooks/use-translations'
 
 function SignUpForm() {
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -26,6 +26,49 @@ function SignUpForm() {
   
   const callbackUrl = searchParams.get('callbackUrl')
   const inviteEmail = searchParams.get('email')
+
+  // Create schema with localized messages
+  const signupSchema = z.object({
+    name: z.string()
+      .min(1, { message: t('auth.signup.validation.nameRequired') })
+      .min(2, { message: t('auth.signup.validation.nameMinLength') }),
+    email: z.string()
+      .min(1, { message: t('auth.signup.validation.emailRequired') })
+      .email({ message: t('auth.signup.validation.emailInvalid') }),
+    password: z.string()
+      .min(1, { message: t('auth.signup.validation.passwordRequired') })
+      .min(6, { message: t('auth.signup.validation.passwordMinLength') }),
+    confirmPassword: z.string()
+      .min(1, { message: t('auth.signup.validation.confirmPasswordRequired') }),
+    acceptTerms: z.boolean()
+      .refine((val) => val === true, {
+        message: t('auth.signup.validation.termsRequired')
+      })
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: t('auth.signup.validation.passwordMismatch'),
+    path: ['confirmPassword']
+  })
+
+  type SignupFormData = z.infer<typeof signupSchema>
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors }
+  } = useForm<SignupFormData>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: {
+      name: '',
+      email: inviteEmail || '',
+      password: '',
+      confirmPassword: '',
+      acceptTerms: false
+    }
+  })
+
+  const acceptTerms = watch('acceptTerms')
   
   // Redirect if already authenticated
   useEffect(() => {
@@ -36,9 +79,9 @@ function SignUpForm() {
   
   useEffect(() => {
     if (inviteEmail) {
-      setEmail(inviteEmail)
+      setValue('email', inviteEmail)
     }
-  }, [inviteEmail])
+  }, [inviteEmail, setValue])
 
   // Show loading while checking session
   if (status === 'loading') {
@@ -54,16 +97,9 @@ function SignUpForm() {
     return null
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const onSubmit = async (data: SignupFormData) => {
     setLoading(true)
     setError('')
-
-    if (password !== confirmPassword) {
-      setError(t('auth.signup.passwordMismatch'))
-      setLoading(false)
-      return
-    }
 
     try {
       const response = await fetch('/api/auth/register', {
@@ -71,7 +107,11 @@ function SignUpForm() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ 
+          name: data.name, 
+          email: data.email, 
+          password: data.password 
+        }),
       })
 
       if (response.ok) {
@@ -80,8 +120,8 @@ function SignUpForm() {
           : '/signin?message=Account created successfully'
         router.push(redirectUrl)
       } else {
-        const data = await response.json()
-        setError(data.error || 'An error occurred')
+        const responseData = await response.json()
+        setError(responseData.error || 'An error occurred')
       }
     } catch (error) {
       setError(t('auth.signup.error'))
@@ -112,7 +152,7 @@ function SignUpForm() {
           }
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-4">
           {error && (
             <Alert variant="destructive">
@@ -125,10 +165,11 @@ function SignUpForm() {
               id="name"
               type="text"
               placeholder={t('auth.signup.fullNamePlaceholder')}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
+              {...register('name')}
             />
+            {errors.name && (
+              <p className="text-xs text-red-600">{errors.name.message}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">{t('auth.signup.email')}</Label>
@@ -136,40 +177,59 @@ function SignUpForm() {
               id="email"
               type="email"
               placeholder={t('auth.signup.emailPlaceholder')}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+              {...register('email')}
               disabled={!!inviteEmail}
             />
+            {errors.email && (
+              <p className="text-xs text-red-600">{errors.email.message}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">{t('auth.signup.password')}</Label>
             <Input
               id="password"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
+              {...register('password')}
             />
+            {errors.password && (
+              <p className="text-xs text-red-600">{errors.password.message}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">{t('auth.signup.confirmPassword')}</Label>
             <Input
               id="confirmPassword"
               type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
+              {...register('confirmPassword')}
             />
+            {errors.confirmPassword && (
+              <p className="text-xs text-red-600">{errors.confirmPassword.message}</p>
+            )}
           </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="acceptTerms" 
+              checked={acceptTerms}
+              onCheckedChange={(checked) => setValue('acceptTerms', !!checked)}
+            />
+            <Label htmlFor="acceptTerms" className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              {t('auth.signup.terms.acceptTerms')}{' '}
+              <Link href="#" className="text-primary hover:underline">
+                {t('auth.signup.terms.termsLink')}
+              </Link>
+            </Label>
+          </div>
+          {errors.acceptTerms && (
+            <p className="text-xs text-red-600">{errors.acceptTerms.message}</p>
+          )}
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full mt-6 text-white cursor-pointer" disabled={loading}>
             {loading ? t('auth.signup.creatingAccount') : t('auth.signup.createButton')}
           </Button>
           <div className="text-sm text-center">
             {t('auth.signup.hasAccount')}{' '}
-            <Link href="/signin" className="text-blue-600 hover:underline">
+            <Link href="/signin" className="text-primary hover:underline">
               {t('auth.signup.signIn')}
             </Link>
           </div>

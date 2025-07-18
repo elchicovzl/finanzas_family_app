@@ -3,6 +3,9 @@
 import { useState, Suspense, useEffect } from 'react'
 import { signIn, useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
@@ -14,8 +17,6 @@ import { Separator } from '@/components/ui/separator'
 import { useTranslations } from '@/hooks/use-translations'
 
 function SignInForm() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -25,6 +26,29 @@ function SignInForm() {
   
   const callbackUrl = searchParams.get('callbackUrl')
   const message = searchParams.get('message')
+
+  // Create schema with localized messages
+  const signinSchema = z.object({
+    email: z.string()
+      .min(1, { message: t('auth.signin.validation.emailRequired') })
+      .email({ message: t('auth.signin.validation.emailInvalid') }),
+    password: z.string()
+      .min(1, { message: t('auth.signin.validation.passwordRequired') })
+  })
+
+  type SigninFormData = z.infer<typeof signinSchema>
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors }
+  } = useForm<SigninFormData>({
+    resolver: zodResolver(signinSchema),
+    defaultValues: {
+      email: '',
+      password: ''
+    }
+  })
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -47,15 +71,14 @@ function SignInForm() {
     return null
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const onSubmit = async (data: SigninFormData) => {
     setLoading(true)
     setError('')
 
     try {
       const result = await signIn('credentials', {
-        email,
-        password,
+        email: data.email,
+        password: data.password,
         redirect: false,
       })
 
@@ -163,31 +186,38 @@ function SignInForm() {
         </div>
 
         {/* Email/Password Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">{t('auth.signin.email')}</Label>
             <Input
               id="email"
               type="email"
               placeholder={t('auth.signin.emailPlaceholder')}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+              {...register('email')}
             />
+            {errors.email && (
+              <p className="text-xs text-red-600">{errors.email.message}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">{t('auth.signin.password')}</Label>
             <Input
               id="password"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
+              {...register('password')}
             />
+            {errors.password && (
+              <p className="text-xs text-red-600">{errors.password.message}</p>
+            )}
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full text-white cursor-pointer" disabled={loading}>
             {loading ? t('auth.signin.signingIn') : t('auth.signin.signInButton')}
           </Button>
+          <div className="text-center">
+            <Link href="/forgot-password" className="text-xs text-primary hover:underline">
+              {t('auth.signin.forgotPassword')}
+            </Link>
+          </div>
         </form>
       </CardContent>
       <CardFooter>
@@ -195,7 +225,7 @@ function SignInForm() {
           {t('auth.signin.noAccount')}{' '}
           <Link 
             href={callbackUrl ? `/signup?callbackUrl=${encodeURIComponent(callbackUrl)}` : '/signup'} 
-            className="text-blue-600 hover:underline"
+            className="text-primary hover:underline"
           >
             {t('auth.signin.signUp')}
           </Link>
