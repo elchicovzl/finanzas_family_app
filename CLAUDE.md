@@ -139,8 +139,8 @@ Reminder (n) → (1) Category [optional]
 
 ### Required Environment Variables
 ```env
-# Database
-DATABASE_URL="postgresql://..."
+# Database (Supabase)
+DATABASE_URL="postgresql://postgres:your_password@your_project.supabase.co:5432/postgres"
 
 # Authentication
 NEXTAUTH_SECRET="..."
